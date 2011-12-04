@@ -3,3 +3,7 @@ C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Release\Z80Emulator.Properties.Resources.resources
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Release\GenerateResource.read.1.tlog
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Release\GenerateResource.write.1.tlog
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\bin\Release\Z80Emulator.exe
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\bin\Release\Z80Emulator.pdb
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Release\Z80Emulator.exe
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Release\Z80Emulator.pdb

@@ -21,35 +21,36 @@ namespace Z80Emulator
         private void button1_Click(object sender, EventArgs e)
         {
             var pg = new byte[256];
-            pg[0] = 0x3e;       // XOR  A
-            pg[1] = 0x67;       // LD   H, A
-            pg[2] = 0x6F;       // LD   L, A
-            pg[3] = 0x7e;       // LD   A, (HL)
+            //pg[0] = 0x3e;       // XOR  A
+            //pg[1] = 0x67;       // LD   H, A
+            //pg[2] = 0x6F;       // LD   L, A
+            //pg[3] = 0x7e;       // LD   A, (HL)
 
 
             //LD    A, 0
-            pg[0x0000] = 0x3e;
-            pg[0x0001] = 0x00;
+            int pc = 0x0000;
+            pg[pc++] = 0x3e;
+            pg[pc++] = 0x00;
             //LD    H, A    ;01100111
-            pg[0x0001] = 0x67;
+            pg[pc++] = 0x67;
             //LD    A, 0xf0
-            pg[0x0002] = 0x3e;
-            pg[0x0003] = 0xf0;
+            pg[pc++] = 0x3e;
+            pg[pc++] = 0xf0;
             //LD    L, A    ;01101111
-            pg[0x0004] = 0x6f;
+            pg[pc++] = 0x6f;
             //LD    A, (HL)    ;01 111 110
-            pg[0x0005] = 0x7e;
+            pg[pc++] = 0x7e;
             //LD    B, A    ;01 000 111
-            pg[0x0006] = 0x47;
+            pg[pc++] = 0x47;
             //LD    A, 0xf1
-            pg[0x0007] = 0x3e;
-            pg[0x0008] = 0xf1;
+            pg[pc++] = 0x3e;
+            pg[pc++] = 0xf1;
             //LD    L, A
-            pg[0x0009] = 0x6f;
+            pg[pc++] = 0x6f;
             //LD    A, (HL)
-            pg[0x000a] = 0x7e;
+            pg[pc++] = 0x7e;
             //SBC   A, B
-            pg[0x000b] = 0x98;
+            pg[pc++] = 0x98;
 
             pg[0x00f0] = 0x0a;    // DB   10
             pg[0x00f1] = 0x15;    // DB   20

@@ -259,7 +259,7 @@ namespace Z80Emulator
                     break;
                 case 0x6:   //(HL)
                     //data = mem[H * 0x100 + L];
-                    data = mem[((UInt16)H) << 8 + L];
+                    data = mem[(((UInt16)H) << 8) + L];
                     break;
                 case 0x7:
                     data = A;
@@ -291,7 +291,7 @@ namespace Z80Emulator
                     break;
                 case 0x6:   //(HL)
                     //data = mem[H * 0x100 + L];
-                    mem[((UInt16)H) << 8 + L] = data;
+                    mem[(((UInt16)H) << 8) + L] = data;
                     break;
                 case 0x7:
                     A = data;
