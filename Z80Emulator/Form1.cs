@@ -23,15 +23,32 @@ namespace Z80Emulator
             var pg = new byte[256];
              
             int pc = 0x0000;
-            pg[pc++] = 0xcd;    //CALL  0x0000
+            pg[pc++] = 0xcd;    //CALL  0x0006
             pg[pc++] = 0x06;    //
             pg[pc++] = 0x00;    //
             pg[pc++] = 0x3e;    //LD    A, 0x12
             pg[pc++] = 0x12;    //
             pg[pc++] = 0x67;    //LD    H, A        ;01 100 111
+                                //0006:
+            pg[pc++] = 0x04;    //
+            pg[pc++] = 0x05;    //
+            pg[pc++] = 0x0C;    //
+            pg[pc++] = 0x0D;    //
+            pg[pc++] = 0x14;    //
+            pg[pc++] = 0x15;    //
+            pg[pc++] = 0x1C;    //
+            pg[pc++] = 0x1D;    //
+            pg[pc++] = 0x24;    //
+            pg[pc++] = 0x25;    //
+            pg[pc++] = 0x2C;    //
+            pg[pc++] = 0x2D;    //
+            pg[pc++] = 0x34;    //
+            pg[pc++] = 0x35;    //
+            pg[pc++] = 0x3C;    //
+            pg[pc++] = 0x3D;    //
             pg[pc++] = 0x3e;    //LD    A, 0x34
             pg[pc++] = 0x34;
-            pg[pc++] = 0xc9;
+            pg[pc++] = 0xc9;    //RET
             pg[pc++] = 0x6f;    //LD    L, A        ;01 101 111
             pg[pc++] = 0xe5;    //PUSH  HL
             pg[pc++] = 0xaf;    //XOR   A

@@ -68,6 +68,60 @@ namespace Z80Emulator
             //レジスタ<-即値間演算、レジスタ-レジスタ演算、レジスタ-メモリ間演算、
 
             //http://taku.izumisawa.jp/Msx/ktecho1.htm
+
+            if ((instruction & 0xc4) == 0x04)
+            {
+                //8bit INC or DEC
+                // レジスタr : オペランド
+                int r = (instruction & 0x38) >> 3;     // 0x38 = 0b00111000
+
+                //byte incdec = 0xff;
+                //if ((instruction & 0x01) == 0x00) incdec += 2;
+                byte incdec;
+                if ((instruction & 0x01) == 0x00)
+                {
+                    incdec = 1;
+                }
+                else
+                {
+                    incdec = 0xff;
+                }
+                switch (r)
+                {
+                    case 0:
+                        B += incdec;
+                        break;
+                    case 1:
+                        C += incdec;
+                        break;
+                    case 2:
+                        D += incdec;
+                        break;
+                    case 3:
+                        E += incdec;
+                        break;
+                    case 4:
+                        H += incdec;
+                        break;
+                    case 5:
+                        L += incdec;
+                        break;
+                    case 6:
+                        //34 INC (HL)
+                        //35 DEC (HL)
+                        var data = mem[(((UInt16)H) << 8) + L];
+                        //var data = mem[H << 8 | L];
+                        data += incdec;
+                        mem[(((UInt16)H) << 8) + L] = data;
+                        break;
+                    case 7:
+                        A += incdec;
+                        break;
+                    default:
+                        break;
+                }
+                return;
+            }
             
             //LD    A, n
             if (instruction == 0x3e)
@@ -84,6 +138,7 @@ namespace Z80Emulator
                 UInt16 addr = mem[PC++];
                 addr |= (UInt16)(mem[PC++] << 8);
                 PC = (UInt16)addr;
+                //return;
             }
 
             if ((instruction & 0xcb) == 0xc1)
@@ -103,6 +158,7 @@ namespace Z80Emulator
             {
                 //PUSH, POP
                 pushpop(instruction);
+                //return;
             }
 
             if (instruction == 0xcd)
@@ -114,6 +170,7 @@ namespace Z80Emulator
                 mem[--SP] = (byte)((PC & 0xff));
                 PC = (UInt16)addr;
                 //PC = (UInt16)(mem[PC] | (mem[PC + 1] << 8));
+                //return;
             }
 
             if (instruction == 0xc9)
@@ -122,21 +179,34 @@ namespace Z80Emulator
                 UInt16 addr = mem[SP++];
                 addr |= (UInt16)(mem[SP++] << 8);
                 PC = (UInt16)addr;
+                //return;
             }
 
-            //LD  r,r'の判定と実行
             var op = instruction & 0xC0;
-            switch (op)
+            if (instruction == 0x40)
             {
-                case 0x40:  //レジスタ間ロード(コピー)命令
-                    load8bitrr(instruction);
-                    break;
-                case 0x80:  //演算命令
-                    accumulate(instruction);
-                    break;
-                default:
-                    break;
+                //LD  r,r'
+                load8bitrr(instruction);
+                //return;
             }
+            if (instruction == 0x80)
+            {
+                //ADD, ADC, SUB, SBC, AND, OR, XOR, CPのいずれか
+                accumulate(instruction);
+                //return;
+            }
+            //switch (op)
+            //{
+            //    case 0x40:  //レジスタ間ロード(コピー)命令
+            //        load8bitrr(instruction);
+            //        break;
+            //    case 0x80:  //演算命令
+            //        accumulate(instruction);
+            //        break;
+            //    default:
+            //        break;
+            //}
+            //return;
         }
 
         private void pushpop(byte instruction)
