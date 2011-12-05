@@ -26,18 +26,6 @@ namespace Z80Emulator
         public byte L { get; private set; }
         /// <summary>実行中のインストラクション</summary>
         public byte instruction { get; private set; }
-        //bool flagS;
-        //bool flagZ;
-        //bool flagH;
-        //bool flagP;
-        //bool flagN;
-        //bool flagC;
-        //byte B;
-        //byte C;
-        //byte D;
-        //byte E;
-        //byte H;
-        //byte L;
 
         byte IXL;
         byte IXH;
@@ -52,7 +40,7 @@ namespace Z80Emulator
         byte[] mem = new byte[MEMSIZE];
 
         /// <summary>命令実行数統計</summary>
-        //static UInt64 executedInstructions = 0;
+        public int executedInstructions { get; private set; }
 
         public void memset(int address, byte[] barray)
         {
@@ -230,6 +218,56 @@ namespace Z80Emulator
             //        break;
             //}
             //return;
+
+            if ((instruction & 0xc7) == 0x06)
+            //00000110
+            //00001110
+            //00010110
+            //00011110
+            //00100110
+            //00101110
+            //00110110
+            //00111110
+
+            //00xxx110
+            //11000111これとANDをとって
+            //00000110これになるのがLD r, n            
+            {
+                //LD    r, n
+                // レジスタr : オペランド
+                int r = (instruction & 0x38) >> 3;     // 0x38 = 0b00111000
+                switch (r)
+                {
+                    case 0:
+                        B = mem[PC++];
+                        break;
+                    case 1:
+                        C = mem[PC++];
+                        break;
+                    case 2:
+                        D = mem[PC++];
+                        break;
+                    case 3:
+                        E = mem[PC++];
+                        break;
+                    case 4:
+                        H = mem[PC++];
+                        break;
+                    case 5:
+                        L = mem[PC++];
+                        break;
+                    case 6:
+                        //36 LD (HL),n
+                        mem[(((UInt16)H) << 8) + L] = mem[PC++];
+                        break;
+                    case 7:
+                        A = mem[PC++];
+                        break;
+                    default:
+                        break;
+                }
+                return;
+            }
         }
 
         private void pushpop(byte instruction)
@@ -513,8 +551,7 @@ namespace Z80Emulator
         {
             PC = initialAddress;
             SP = 0x0000;
+            executedInstructions = 0;
         }
-
-        public int executedInstructions { get; set; }
     }
 }
