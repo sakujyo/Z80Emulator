@@ -76,6 +76,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Z80InstructionMap.xls" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Class1.txt" />

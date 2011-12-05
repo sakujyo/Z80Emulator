@@ -52,7 +52,7 @@ namespace Z80Emulator
         byte[] mem = new byte[MEMSIZE];
 
         /// <summary>命令実行数統計</summary>
-        static UInt64 executedInstructions = 0;
+        //static UInt64 executedInstructions = 0;
 
         public void memset(int address, byte[] barray)
         {
@@ -62,18 +62,68 @@ namespace Z80Emulator
         public void Execute()
         {
             instruction = mem[PC++];
+            executedInstructions++;     //おまけの統計
             //命令のデコード
-            //ex)レジスタ<-即値間、レジスタ-レジスタ間コピー、レジスタ-メモリ間コピー、
-            //レジスタ<-即値間演算、レジスタ-レジスタ演算、
+            //ex)レジスタ<-即値間コピー、レジスタ-レジスタ間コピー、レジスタ-メモリ間コピー、
+            //レジスタ<-即値間演算、レジスタ-レジスタ演算、レジスタ-メモリ間演算、
 
+            //http://taku.izumisawa.jp/Msx/ktecho1.htm
+            
             //LD    A, n
             if (instruction == 0x3e)
             {
                 A = mem[PC++];
-                executedInstructions += 2;
                 return;
             }
-            
+
+            if (instruction == 0xc2)
+            {
+                // C2 JP    NZ, nn
+                // C3 JP    nn
+                if (flagZ && (instruction & 0x01) == 0) return;
+                UInt16 addr = mem[PC++];
+                addr |= (UInt16)(mem[PC++] << 8);
+                PC = (UInt16)addr;
+            }
+
+            if ((instruction & 0xcb) == 0xc1)
+            //11000001  C1
+            //11010001  C5
+            //11100001  D1
+            //11110001  D5
+            //11000101  E1
+            //11010101  E5
+            //11100101  F1
+            //11110101  F5
+
+            //11000001	1でなければならない
+            //00110100	1か0かを問わない
+            //11001011これとANDをとって
+            //11000001これになればC1,C5,D1,D5,E1,E5,F1,F5のいずれか
+            {
+                //PUSH, POP
+                pushpop(instruction);
+            }
+
+            if (instruction == 0xcd)
+            {
+                // CALL nn
+                UInt16 addr = mem[PC++];
+                addr |= (UInt16)(mem[PC++] << 8);
+                mem[--SP] = (byte)((PC & 0xff00) >> 8);
+                mem[--SP] = (byte)((PC & 0xff));
+                PC = (UInt16)addr;
+                //PC = (UInt16)(mem[PC] | (mem[PC + 1] << 8));
+            }
+
+            if (instruction == 0xc9)
+            {
+                // RET
+                UInt16 addr = mem[SP++];
+                addr |= (UInt16)(mem[SP++] << 8);
+                PC = (UInt16)addr;
+            }
+
             //LD  r,r'の判定と実行
             var op = instruction & 0xC0;
             switch (op)
@@ -87,12 +137,77 @@ namespace Z80Emulator
                 default:
                     break;
             }
-            //if (op == 0x40)
-            //{
-            //    load8bitrr(instruction);
-            //}
+        }
 
-            executedInstructions++;     //おまけの統計
+        private void pushpop(byte instruction)
+        {
+            var qq = (instruction & 0x30) >> 4;    //0b00110000
+            //(SP-1)←qqH
+            //(SP-2)←qqL
+            //SP←SP-2
+            if ((instruction & 0x04) == 0x04)
+            {
+                //PUSH
+                switch (qq)
+                {
+                    case 0:
+                        mem[--SP] = B;
+                        mem[--SP] = C;
+                        break;
+                    case 1:
+                        mem[--SP] = D;
+                        mem[--SP] = E;
+                        break;
+                    case 2:
+                        mem[--SP] = H;
+                        mem[--SP] = L;
+                        break;
+                    case 3:
+                        mem[--SP] = A;
+                        byte F = (byte)(
+                                ((flagS ? 1 : 0) << 7) &
+                                ((flagZ ? 1 : 0) << 6) &
+                                ((flagH ? 1 : 0) << 4) &
+                                ((flagP ? 1 : 0) << 2) &
+                                ((flagN ? 1 : 0) << 1) &
+                                ((flagC ? 1 : 0) << 0));
+                        mem[--SP] = F;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                //POP
+                switch (qq)
+                {
+                    case 0:
+                        C = mem[SP++];
+                        B = mem[SP++];
+                        break;
+                    case 1:
+                        E = mem[SP++];
+                        D = mem[SP++];
+                        break;
+                    case 2:
+                        L = mem[SP++];
+                        H = mem[SP++];
+                        break;
+                    case 3:
+                        byte F = mem[SP++];
+                        flagS = (F & 0x80) == 0x80 ? true : false;
+                        flagZ = (F & 0x40) == 0x40 ? true : false;
+                        flagH = (F & 0x10) == 0x10 ? true : false;
+                        flagP = (F & 0x04) == 0x04 ? true : false;
+                        flagN = (F & 0x02) == 0x02 ? true : false;
+                        flagC = (F & 0x01) == 0x01 ? true : false;
+                        A = mem[SP++];
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         private void accumulate(byte instruction)
@@ -304,6 +419,9 @@ namespace Z80Emulator
         public CPU(UInt16 initialAddress)
         {
             PC = initialAddress;
+            SP = 0x0000;
         }
+
+        public int executedInstructions { get; set; }
     }
 }
