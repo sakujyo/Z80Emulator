@@ -2,20 +2,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections.ObjectModel;
 
-namespace Z80Emulator
+namespace ProcessorEmulator
 {
-    class CPU
+    public class Z80
     {
         //private
         //byte A;
         public byte A { get; private set; }
         //byte F;     //S Z x H x P N C
+        /// <summary>サイン。正なら0、負なら1。</summary>
         public bool flagS { get; private set; }
         public bool flagZ { get; private set; }
+        /// <summary>ハーフキャリー。bit3からbit4への繰り上がり時に発生。</summary>
         public bool flagH { get; private set; }
         /// <summary>パリティ/オーバーフロー</summary>
         public bool flagP { get; private set; }
+        /// <summary>加算命令後0、減算命令後1。</summary>
         public bool flagN { get; private set; }
         public bool flagC { get; private set; }
         public byte B { get; private set; }
@@ -24,27 +28,160 @@ namespace Z80Emulator
         public byte E { get; private set; }
         public byte H { get; private set; }
         public byte L { get; private set; }
+        /// <summary>
+        /// フラグレジスタ。SZxHxPNCの順(上位から)。
+        /// flagS: サイン。正なら0。負なら1。
+        /// flagN: 加算命令後0。減算命令後1。
+        /// flagH: ハーフキャリー。bit3からbit4への繰り上がり時に発生。
+        /// </summary>
+        public byte F
+        {
+            get
+            {
+                return (byte)(
+                                ((flagS ? 1 : 0) << 7) |
+                                ((flagZ ? 1 : 0) << 6) |
+                                ((flagH ? 1 : 0) << 4) |
+                                ((flagP ? 1 : 0) << 2) |
+                                ((flagN ? 1 : 0) << 1) |
+                                ((flagC ? 1 : 0) << 0));
+            }
+            private set
+            {
+                flagS = (value & 0x80) == 0x80 ? true : false;
+                flagZ = (value & 0x40) == 0x40 ? true : false;
+                flagH = (value & 0x10) == 0x10 ? true : false;
+                flagP = (value & 0x04) == 0x04 ? true : false;
+                flagN = (value & 0x02) == 0x02 ? true : false;
+                flagC = (value & 0x01) == 0x01 ? true : false;
+            }
+            //public byte[] MEM {
+            //    get { return mem; }
+            //}
+
+        }        
         /// <summary>実行中のインストラクション</summary>
         public byte instruction { get; private set; }
 
-        byte IXL;
-        byte IXH;
-        byte IYL;
-        byte IYH;
-        UInt16 SP;
-        UInt16 PC;
+        public byte IXL { get; private set; }
+        public byte IXH { get; private set; }
+        public byte IYL { get; private set; }
+        public byte IYH { get; private set; }
+        public UInt16 SP { get; private set; }
+        public UInt16 PC { get; private set; }
 
         /// <summary>主メモリ空間のサイズ</summary>
         const int MEMSIZE = 64 * 1024;  //64KB
         /// <summary>MEMSIZEの大きさのメモリ空間</summary>
-        byte[] mem = new byte[MEMSIZE];
+        private byte[] mem;
+        public ReadOnlyCollection<byte> PeepedMEM { get; private set; }
+        //ちなみに初期化子は親クラスのコンストラクタの実行に先行するらしい
+        //public Array mem { get; set; }
+        //public byte[] MEM {
+        //    get { return mem; }
+        //}
+
+        public Z80(UInt16 initialAddress)
+        {
+            //mem = new byte[MEMSIZE];
+            //PeepedMEM = new ReadOnlyCollection<byte>(mem);
+            
+            ////Test Execute2
+            ////mem[0] = 0xcd;
+
+
+            //PC = initialAddress;
+            //SP = 0x0000;
+            //executedInstructions = 0;
+
+            Reset(initialAddress);
+            //IXL = 0;
+            //IXH = 0;
+            //IYL = 0;
+            //IYH = 0;
+        }
+
+        public void Reset(UInt16 initialAddress)
+        {
+            mem = null;     // 意味あります？      //->この場合は意味ない
+            //GC.Collect（）；GC.WaitForPendingFinalizers();GC.Collect()
+            mem = new byte[MEMSIZE];
+            PeepedMEM = new ReadOnlyCollection<byte>(mem);
+
+            PC = initialAddress;
+            SP = 0x0000;
+            executedInstructions = 0;
+            A = 0;
+            B = 0;
+            C = 0;
+            D = 0;
+            E = 0;
+            H = 0;
+            L = 0;
+            flagS = false;
+            flagZ = false;
+            flagH = false;
+            flagP = false;
+            flagN = false;
+            flagC = false;
+        }
 
         /// <summary>命令実行数統計</summary>
         public int executedInstructions { get; private set; }
 
-        public void memset(int address, byte[] barray)
+        /// <summary>
+        /// メモリの領域にデータをコピーします。
+        /// </summary>
+        /// <param name="address">コピー先のアドレス</param>
+        /// <param name="barray">コピーするデータ</param>
+        public void Memset(int address, byte[] barray)
         {
             barray.CopyTo(mem, address);
+        }
+
+        /// <summary>
+        /// メモリにプログラムデータをコピーした上で、addressから実行を開始します。
+        /// </summary>
+        /// <param name="address">プログラムの開始番地</param>
+        /// <param name="mempart">プログラムデータ</param>
+        public /*private*/ void SetAndExecute(int address, byte[] mempart)
+        {
+            PC =(UInt16)address;
+            Memset(address, mempart);
+            do
+            {
+                Execute();
+            } while (instruction != 0xff);
+        }
+
+        public int Execute2()
+        {
+            //CPUの状態を入力とし、CPUの状態を出力とするようなサンプルのスタブ
+            //入力するCPU状態:
+            //レジスタ(の一部)の値
+            //メモリ(の一部)の値
+            //入力ポート(の一部)から入力を実行した時の値
+            //出力するCPU状態:
+            //変化したレジスタの(レジスタ番号と)値
+            //変化したメモリの(アドレスと)値
+            //出力ポートへ出力された(ポート番号と順序と)値
+            //レジスタ番号:
+            //B:0
+            //C:1
+            //D:2
+            //E:3
+            //H:4
+            //L:5
+            //(HL):6
+            //A:7
+            //PCH: 8,	PCL: 9
+            //SPH: 10,	SPL: 11
+            //IXH	IXL
+            //IYH	IYL
+            var r = new List<System.Tuple<UInt16, Byte>>();
+            var m = new List<System.Tuple<UInt16, Byte>>(); //Tupleではなく状態オブジェクトで表せる？
+            //TupleだとTest側でリテラルを書けない？
+            return 1234;
         }
 
         public void Execute()
@@ -57,7 +194,7 @@ namespace Z80Emulator
 
             //http://taku.izumisawa.jp/Msx/ktecho1.htm
 
-            if ((instruction & 0xc4) == 0x04)
+            if ((instruction & 0xc6) == 0x04)
             //00000100
             //00000101
             //00010100
@@ -78,68 +215,20 @@ namespace Z80Emulator
             //00xxx10x
             //00111000	レジスタr
             //00000001	INCかDECか
-            //11000100これ(0でなければならないbitと1であることを確かめたいbit)とANDをとって
+            //11000110これ(0でなければならないbitと1であることを確かめたいbit)とANDをとって
             //00000100これになれば8bitINC,DEC
-
             {
                 //8bit INC or DEC
-                // レジスタr : オペランド
-                int r = (instruction & 0x38) >> 3;     // 0x38 = 0b00111000
-
-                //byte incdec = 0xff;
-                //if ((instruction & 0x01) == 0x00) incdec += 2;
-                byte incdec;
-                if ((instruction & 0x01) == 0x00)
-                {
-                    incdec = 1;
-                }
-                else
-                {
-                    incdec = 0xff;
-                }
-                switch (r)
-                {
-                    case 0:
-                        B += incdec;
-                        break;
-                    case 1:
-                        C += incdec;
-                        break;
-                    case 2:
-                        D += incdec;
-                        break;
-                    case 3:
-                        E += incdec;
-                        break;
-                    case 4:
-                        H += incdec;
-                        break;
-                    case 5:
-                        L += incdec;
-                        break;
-                    case 6:
-                        //34 INC (HL)
-                        //35 DEC (HL)
-                        var data = mem[(((UInt16)H) << 8) + L];
-                        //var data = mem[H << 8 | L];
-                        data += incdec;
-                        mem[(((UInt16)H) << 8) + L] = data;
-                        break;
-                    case 7:
-                        A += incdec;
-                        break;
-                    default:
-                        break;
-                }
+                INCDEC8bitAndFlag(instruction);
                 return;
             }
             
-            //LD    A, n
-            if (instruction == 0x3e)
-            {
-                A = mem[PC++];
-                return;
-            }
+            ////LD    A, n
+            //if (instruction == 0x3e)
+            //{
+            //    A = mem[PC++];
+            //    return;
+            //}
 
             if (instruction == 0xc2)
             {
@@ -169,7 +258,7 @@ namespace Z80Emulator
             {
                 //PUSH, POP
                 pushpop(instruction);
-                //return;
+                return;
             }
 
             if (instruction == 0xcd)
@@ -193,14 +282,13 @@ namespace Z80Emulator
                 //return;
             }
 
-            var op = instruction & 0xC0;
-            if (instruction == 0x40)
+            if ((instruction & 0xc0) == 0x40)
             {
                 //LD  r,r'
                 load8bitrr(instruction);
                 //return;
             }
-            if (instruction == 0x80)
+            if ((instruction & 0xc0) == 0x80)
             {
                 //ADD, ADC, SUB, SBC, AND, OR, XOR, CPのいずれか
                 accumulate(instruction);
@@ -270,13 +358,87 @@ namespace Z80Emulator
             }
         }
 
+        private void INCDEC8bitAndFlag(byte instruction)
+        {
+            //8bit INC or DEC
+            // レジスタr : オペランド
+            int r = (instruction & 0x38) >> 3;     // 0x38 = 0b00111000
+
+            //byte incdec = 0xff;
+            //if ((instruction & 0x01) == 0x00) incdec += 2;
+            byte incdec;
+            if ((instruction & 0x01) == 0x00)
+            {
+                incdec = 1;
+            }
+            else
+            {
+                incdec = 0xff;
+            }
+            byte data;
+
+            switch (r)
+            {
+                case 0:
+                    data = B += incdec;
+                    break;
+                case 1:
+                    data = C += incdec;
+                    break;
+                case 2:
+                    data = D += incdec;
+                    break;
+                case 3:
+                    data = E += incdec;
+                    break;
+                case 4:
+                    data = H += incdec;
+                    break;
+                case 5:
+                    data = L += incdec;
+                    break;
+                case 6:
+                    //34 INC (HL)
+                    //35 DEC (HL)
+                    data = mem[(((UInt16)H) << 8) + L];
+                    //var data = mem[H << 8 | L];
+                    data += incdec;
+                    mem[(((UInt16)H) << 8) + L] = data;
+                    break;
+                case 7:
+                    data = A += incdec;
+                    break;
+                default:
+                    data = 0;
+                    break;
+            }
+
+            flagZ = data == 0x00 ? true : false;
+            flagS = data >= 0x80 ? true : false;
+            if ((instruction & 0x01) == 0x00)
+            {
+                flagH = (data & 0x0f) == 0x00 ? true : false;
+                flagN = false;
+                flagP = data == 0x00 ? true : false;   // over flow
+                //キャリーは変化しない。
+            }
+            else
+            {
+                flagH = (data & 0x0f) == 0x0f ? true : false;
+                flagN = true;
+                flagP = data == 0xff ? true : false;   // over flow
+                //キャリーは変化しない。
+            }
+        }
+
         private void pushpop(byte instruction)
         {
             var qq = (instruction & 0x30) >> 4;    //0b00110000
             //(SP-1)←qqH
             //(SP-2)←qqL
             //SP←SP-2
-            if ((instruction & 0x04) == 0x04)
+            //if ((instruction & 0x04) == 0x04)
+            if ((instruction & 0xcf) == 0xc5)
             {
                 //PUSH
                 switch (qq)
@@ -295,13 +457,13 @@ namespace Z80Emulator
                         break;
                     case 3:
                         mem[--SP] = A;
-                        byte F = (byte)(
-                                ((flagS ? 1 : 0) << 7) &
-                                ((flagZ ? 1 : 0) << 6) &
-                                ((flagH ? 1 : 0) << 4) &
-                                ((flagP ? 1 : 0) << 2) &
-                                ((flagN ? 1 : 0) << 1) &
-                                ((flagC ? 1 : 0) << 0));
+                        //byte F = (byte)(
+                        //        ((flagS ? 1 : 0) << 7) &
+                        //        ((flagZ ? 1 : 0) << 6) &
+                        //        ((flagH ? 1 : 0) << 4) &
+                        //        ((flagP ? 1 : 0) << 2) &
+                        //        ((flagN ? 1 : 0) << 1) &
+                        //        ((flagC ? 1 : 0) << 0));
                         mem[--SP] = F;
                         break;
                     default:
@@ -326,14 +488,15 @@ namespace Z80Emulator
                         H = mem[SP++];
                         break;
                     case 3:
-                        byte F = mem[SP++];
-                        flagS = (F & 0x80) == 0x80 ? true : false;
-                        flagZ = (F & 0x40) == 0x40 ? true : false;
-                        flagH = (F & 0x10) == 0x10 ? true : false;
-                        flagP = (F & 0x04) == 0x04 ? true : false;
-                        flagN = (F & 0x02) == 0x02 ? true : false;
-                        flagC = (F & 0x01) == 0x01 ? true : false;
-                        A = mem[SP++];
+                        //byte F = mem[SP++];
+                        F = mem[SP++];
+                        //flagS = (F & 0x80) == 0x80 ? true : false;
+                        //flagZ = (F & 0x40) == 0x40 ? true : false;
+                        //flagH = (F & 0x10) == 0x10 ? true : false;
+                        //flagP = (F & 0x04) == 0x04 ? true : false;
+                        //flagN = (F & 0x02) == 0x02 ? true : false;
+                        //flagC = (F & 0x01) == 0x01 ? true : false;
+                        A = mem[SP++];  //TODO: 確認。AFレジスタはAが上位8ビットだと思う
                         break;
                     default:
                         break;
@@ -545,13 +708,6 @@ namespace Z80Emulator
                 default:
                     break;
             }
-        }
-
-        public CPU(UInt16 initialAddress)
-        {
-            PC = initialAddress;
-            SP = 0x0000;
-            executedInstructions = 0;
         }
     }
 }

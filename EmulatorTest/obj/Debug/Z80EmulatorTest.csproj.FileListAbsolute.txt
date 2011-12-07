@@ -1,0 +1,9 @@
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.pdb
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\nunit.framework.dll
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\Z80Emulator.exe
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\Z80Emulator.pdb
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\nunit.framework.xml
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\obj\Debug\EmulatorTest.dll
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\obj\Debug\EmulatorTest.pdb

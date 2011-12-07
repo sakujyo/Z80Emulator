@@ -1,9 +1,9 @@
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\bin\Debug\Z80Emulator.exe
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\bin\Debug\Z80Emulator.pdb
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\ResolveAssemblyReference.cache
-C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\Z80Emulator.Form1.resources
-C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\Z80Emulator.Properties.Resources.resources
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\GenerateResource.read.1.tlog
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\GenerateResource.write.1.tlog
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\Z80Emulator.exe
 C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\Z80Emulator.pdb
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\ProcessorEmulator.Form1.resources
+C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\Z80Emulator\obj\x86\Debug\ProcessorEmulator.Properties.Resources.resources
