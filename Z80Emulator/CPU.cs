@@ -233,8 +233,16 @@ namespace ProcessorEmulator
             if (instruction == 0xc2)
             {
                 // C2 JP    NZ, nn
-                // C3 JP    nn
                 if (flagZ && (instruction & 0x01) == 0) return;
+                UInt16 addr = mem[PC++];
+                addr |= (UInt16)(mem[PC++] << 8);
+                PC = (UInt16)addr;
+                return;
+            }
+
+            if (instruction == 0xc3)
+            {
+                // C3 JP    nn
                 UInt16 addr = mem[PC++];
                 addr |= (UInt16)(mem[PC++] << 8);
                 PC = (UInt16)addr;

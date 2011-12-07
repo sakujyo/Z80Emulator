@@ -200,6 +200,69 @@ namespace EmulatorTest
 
         }
 
+        [Test, Description("JP Test")]
+        public void TestJp()
+        {
+            var program = new byte[256];
+
+            //JP nn のテスト
+            UInt16 pc = 0x0000;
+            p.Reset(pc);    //Fもクリアされる
+            program[pc++] = 0xc3;   //JP 0x0010
+            program[pc++] = 0x10;
+            program[pc++] = 0x00;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            pc = 0x0010;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+            p.SetAndExecute(0, program);
+            Assert.That(p.PC, Is.EqualTo(0x0011), "TEST: JP 0x0010");
+        }
+
+        [Test, Description("CALL RET Test")]
+        public void TestCallRet()
+        {
+            //CALL RET のテスト
+            var program = new byte[256];
+
+            //CALL のテスト
+            UInt16 pc = 0x0000;
+            p.Reset(pc);    //F, SPもクリアされる
+            program[pc++] = 0xcd;   //CALL 0x0010
+            program[pc++] = 0x10;
+            program[pc++] = 0x00;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            pc = 0x0010;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+
+            p.SetAndExecute(0, program);
+            Assert.That(p.PeepedMEM[0xffff], Is.EqualTo(0x00), "TEST: CALL nn(ret PC high)");
+            Assert.That(p.PeepedMEM[0xfffe], Is.EqualTo(0x03), "TEST: CALL nn(ret PC low)");
+            Assert.That(p.SP, Is.EqualTo(0xfffe), "TEST: CALL 0x0010(SP)");
+            Assert.That(p.PC, Is.EqualTo(0x0011), "TEST: CALL 0x0010(PC)");
+
+
+            //RET のテスト
+            pc = 0x0000;
+            p.Reset(pc);    //F, SPもクリアされる
+            program[pc++] = 0xcd;   //CALL 0x0010
+            program[pc++] = 0x10;
+            program[pc++] = 0x00;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            pc = 0x0010;
+            program[pc++] = 0xc9;   //RET
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            p.SetAndExecute(0, program);
+            //Assert.That(p.PeepedMEM[0xffff], Is.EqualTo(0x00), "TEST: CALL nn(ret PC high)");
+            //Assert.That(p.PeepedMEM[0xfffe], Is.EqualTo(0x03), "TEST: CALL nn(ret PC low)");
+            Assert.That(p.SP, Is.EqualTo(0x0000), "TEST: CALL 0x0010(SP)");
+            Assert.That(p.PC, Is.EqualTo(0x0004), "TEST: CALL 0x0010(PC)");
+        }
+
         [SetUp]
         public void Init()
         {

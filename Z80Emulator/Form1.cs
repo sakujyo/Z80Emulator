@@ -29,8 +29,8 @@ namespace ProcessorEmulator
 
         public void TestExecute()
         {
-            var program = new byte[256];
-            UInt16 pc = 0x0000;
+            //var program = new byte[256];
+            //UInt16 pc = 0x0000;
             //p.Reset(pc);    //Fもクリアされる
             //program[pc++] = 0x06; program[pc++] = 0x11; //LD B, 0x11
             //program[pc++] = 0x0e; program[pc++] = 0x22; //LD C, 0x22
@@ -46,6 +46,35 @@ namespace ProcessorEmulator
 
             //program[pc++] = 0xff;   // テスト実行を強制終了
             //p.SetAndExecute(0, program);
+
+            var program = new byte[256];
+
+            UInt16 pc = 0x0000;
+            p.Reset(pc);    //F, SPもクリアされる
+
+
+            //CALL のテスト
+            program[pc++] = 0xcd;   //CALL 0x0010
+            program[pc++] = 0x10;
+            program[pc++] = 0x00;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            pc = 0x0010;
+            program[pc++] = 0xc9;   //RET
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            p.SetAndExecute(0, program);
+
+            //JP nn のテスト
+            program[pc++] = 0xc3;   //JP 0x0010
+            program[pc++] = 0x10;
+            program[pc++] = 0x00;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここを通らないことを確認する)
+
+            pc = 0x0010;
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+            p.SetAndExecute(0, program);
 
 
             //pc = 0x0000;
