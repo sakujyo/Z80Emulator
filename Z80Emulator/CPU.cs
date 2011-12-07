@@ -81,6 +81,9 @@ namespace ProcessorEmulator
         //    get { return mem; }
         //}
 
+        public delegate void DevNotify(byte port, byte data);  // デリゲートの宣言
+        public DevNotify devNotify;       // デリゲートの作成
+
         public Z80(UInt16 initialAddress)
         {
             //mem = new byte[MEMSIZE];
@@ -233,7 +236,8 @@ namespace ProcessorEmulator
             if (instruction == 0xc2)
             {
                 // C2 JP    NZ, nn
-                if (flagZ && (instruction & 0x01) == 0) return;
+                //if (flagZ && (instruction & 0x01) == 0) return;
+                if (flagZ) return;
                 UInt16 addr = mem[PC++];
                 addr |= (UInt16)(mem[PC++] << 8);
                 PC = (UInt16)addr;
@@ -361,6 +365,21 @@ namespace ProcessorEmulator
                         break;
                     default:
                         break;
+                }
+                return;
+            }
+
+            if (instruction == 0xd3)
+            {
+                //OUT   n, A
+                var port = mem[PC++];
+                //if (port >= 0x00 && port <= 0x03)
+                //{
+                //    //VDP に対するOUT
+                //}
+                if (devNotify != null)
+                {
+                    devNotify(port, A);
                 }
                 return;
             }
@@ -613,12 +632,14 @@ namespace ProcessorEmulator
         private byte arithAndFlag(byte r, int v)
         {
             //A = (byte)(v & 0xff);
-            flagC = (v & 0xff00) == 0;
+            flagC = (v & 0xff00) == 0;      //TODO: 若干おかしい
             flagZ = v == 0 ? true : false;
             //flagS = v < 0 ? true : false;           // 負で true?
             flagS = (v & 0x80) != 0 ? true : false;   // S 結果が負数(-1～-128)なら1(演算結果の第7ビットのコピー)
             //flagP パリティ/オーバーフロー    P/V  結果が2の補数として-128～+127を超えたら1
             flagP = ((r & 0x80) != 0) ^ ((v & 0x80) != 0);
+            //flagN: 未実装
+            //flagH: 未実装
             return (byte)(v & 0xff);
         }
 

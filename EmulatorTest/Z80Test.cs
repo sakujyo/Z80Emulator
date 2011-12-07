@@ -33,6 +33,7 @@ namespace EmulatorTest
         //            x.measureCPUTime Assert.That (lazy(PEFS.Problem_0000.run input)) (Is.EqualTo(result)) (sprintf "1234 * %A = %A" input result)
         ////            Assert.That (PEFS.Problem_0000.run input, Is.EqualTo(result), sprintf "1234 * %A = %A" input result)
         private Z80 p = new Z80(0);
+        private VDP v = new VDP(256 * 1024);
 
         //private void SetAndExecute(int address, byte[] mempart)
         //{
@@ -263,11 +264,50 @@ namespace EmulatorTest
             Assert.That(p.PC, Is.EqualTo(0x0004), "TEST: CALL 0x0010(PC)");
         }
 
+        [Test, Description("OUT Test 1(VDP Pixel Write)")]
+        public void TestOutVDPPixelWrite()
+        {
+            var program = new byte[256];
+
+            //OUT(VDP Pixel Write) のテスト
+            UInt16 pc = 0x0000;
+            p.Reset(pc);    //F, SPもクリアされる
+            //program[pc++] = 0x3e;   //LD    A, 0x02;
+            //program[pc++] = 0x00;   //(VDP Reset Command)
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x00;   //PORT 0x03: VDP Command Port
+
+            program[pc++] = 0x3e;   //LD    A, 0x00;
+            program[pc++] = 0x00;   //(Destination Address(VRAM))
+            program[pc++] = 0xd3;   //OUT   n. A
+            program[pc++] = 0x04;   //PORT 0x04: Destination Address 0(VRAM)
+            program[pc++] = 0xd3;   //OUT   n. A
+            program[pc++] = 0x05;   //PORT 0x05: Destination Address 1(VRAM)
+            program[pc++] = 0xd3;   //OUT   n. A
+            program[pc++] = 0x06;   //PORT 0x06: Destination Address 2(VRAM)
+            program[pc++] = 0xd3;   //OUT   n. A
+            program[pc++] = 0x07;   //PORT 0x07: Destination Address 3(VRAM)
+
+            program[pc++] = 0x3e;   //LD    A, 0xff;
+            program[pc++] = 0xff;   //Pixel Data
+            program[pc++] = 0xd3;   //OUT   n. A
+            program[pc++] = 0x01;   //PORT 0x01: Pixel Data
+            program[pc++] = 0x3e;   //LD    A, 0x02;
+            program[pc++] = 0x02;   //(Pixel Write Command)
+            program[pc++] = 0xd3;   //OUT   n. A
+            program[pc++] = 0x00;   //PORT 0x00: VDP Command Port
+            program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+            
+            p.SetAndExecute(0, program);
+            Assert.That(v.PeepedVRAM[0], Is.EqualTo(0xff), "TEST: OUT Test 1(VDP Pixel Write)");
+        }
+
         [SetUp]
         public void Init()
         {
             var m = new byte[0x10000];
             p.Memset(0, m);
+            p.devNotify += v.Accept;
 
             //System.IO.StreamWriter writer = new System.IO.StreamWriter(@"d:\t\$$$.txt");
             //try
