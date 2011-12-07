@@ -13,6 +13,7 @@ namespace ProcessorEmulator
         //const int VRAMSIZE = 256 * 1024;  //256KB
         /// <summary>VRAMSIZEの大きさのビデオメモリ空間</summary>
         private byte[] vram;
+        private CPU p;
         public ReadOnlyCollection<byte> PeepedVRAM { get; private set; }
 
         //private UInt32 current;
@@ -27,8 +28,9 @@ namespace ProcessorEmulator
         public byte address3 { get; private set; }
 
 
-        public VDP(UInt32 vramsize)
+        public VDP(CPU p, UInt32 vramsize)
         {
+            this.p = p;
             Reset(vramsize);
         }
 
@@ -52,6 +54,7 @@ namespace ProcessorEmulator
             switch (port)
             {
                 case 0:
+                    UInt32 address;
                     switch (data)
                     {
                         case 0:
@@ -63,13 +66,27 @@ namespace ProcessorEmulator
                         case 2:
                             //Pixel Write
                             commandState = data;
-                            UInt32 address = (UInt32)((address3 << 24) | (address2 << 16) | (address1 << 8) | address0);
+                            address = (UInt32)((address3 << 24) | (address2 << 16) | (address1 << 8) | address0);
                             vram[address++] = register1;
                             address0 = (byte)(address & 0x000000ff);    address >>= 8;
                             address1 = (byte)(address & 0x000000ff);    address >>= 8;
                             address2 = (byte)(address & 0x000000ff);    address >>= 8;
                             address3 = (byte)(address & 0x000000ff);
                             
+                            break;
+                        case 3:
+                            //DMA Block Transfer
+                            address = (UInt32)((address3 << 24) | (address2 << 16) | (address1 << 8) | address0);
+                            UInt16 source = (UInt16)((sourceAddressH << 8) | sourceAddressL);
+                            //矩形ブロック転送なので、転送サイズ上位下位各4ビットは0で1を意味する(最大16)
+                            var height = 1 + ((register1 >> 4) & 0x0f);
+                            var width = 1 + (register1 & 0x0f);
+                            for (int y = 0; y < height; y++) {
+                                for (int x = 0; x < width; x++) {
+                                    if ((address / 512) != ((address + x) / 512)) continue; //右端から左端にはみ出る場合はスキップ
+                                    vram[address + y * 512 + x] = p.PeepedMEM[source + y * width + x];
+                                }
+                            }
                             break;
                         default:
                             break;

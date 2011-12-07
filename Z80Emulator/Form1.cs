@@ -19,7 +19,7 @@ namespace ProcessorEmulator
         {
             InitializeComponent();
             p = new Z80(0);        // 実行開始アドレス
-            v = new VDP(256 * 1024);    // ビデオメモリサイズ256KB
+            v = new VDP(p, 256 * 1024);    // ビデオメモリサイズ256KB
             p.devNotify += v.Accept;
         }
 
@@ -52,49 +52,98 @@ namespace ProcessorEmulator
             //program[pc++] = 0xff;   // テスト実行を強制終了
             //p.SetAndExecute(0, program);
 
-            var program = new byte[256];
+            var program = new byte[512];
 
             UInt16 pc = 0x0000;
             p.Reset(pc);    //F, SPもクリアされる
 
-            //OUT(VDP Pixel Write) のテスト
-            program[pc++] = 0x3e;   //LD    A, 0x00;
-            program[pc++] = 0x00;   //(Destination Address(VRAM))
-            program[pc++] = 0xd3;   //OUT   n. A
-            program[pc++] = 0x04;   //PORT 0x04: Destination Address 0(VRAM)
-            program[pc++] = 0xd3;   //OUT   n. A
-            program[pc++] = 0x05;   //PORT 0x05: Destination Address 1(VRAM)
-            program[pc++] = 0xd3;   //OUT   n. A
-            program[pc++] = 0x06;   //PORT 0x06: Destination Address 2(VRAM)
-            program[pc++] = 0xd3;   //OUT   n. A
-            program[pc++] = 0x07;   //PORT 0x07: Destination Address 3(VRAM)
-            //pc=0x000a
-            program[pc++] = 0xaf;   //000A  XOR A
-            program[pc++] = 0x47;   //000B  LD  B, A
-            program[pc++] = 0x4f;   //000C  LD  C, A
-            program[pc++] = 0x16;   //000D  LD  D, 0x40
-            program[pc++] = 0x40;   //000E  LD  D, 0x40
-            //LOOP1: 000F
-            program[pc++] = 0x78;   //LD    A, B
-            //program[pc++] = 0x3e;   //LD    A, 0xff;
-            //program[pc++] = 0xff;   //Pixel Data
-            program[pc++] = 0xd3;   //OUT   n. A
-            program[pc++] = 0x01;   //PORT 0x01: Pixel Data
-            program[pc++] = 0x3e;   //LD    A, 0x02;
-            program[pc++] = 0x02;   //(Pixel Write Command)
-            program[pc++] = 0xd3;   //OUT   n. A
-            program[pc++] = 0x00;   //PORT 0x00: VDP Command Port
-            program[pc++] = 0x0d;   //DEC   C
-            program[pc++] = 0xc2;   //JP    NZ, 000f
-            program[pc++] = 0x0f;   //JP    NZ, nn
-            program[pc++] = 0x00;   //JP    NZ, nn
-            program[pc++] = 0x04;   //INC   B
-            program[pc++] = 0x78;   //LD    A, B
-            program[pc++] = 0xba;   //CP    D
-            program[pc++] = 0xc2;   //JP    NZ, 000f
-            program[pc++] = 0x0f;   //JP    NZ, nn
-            program[pc++] = 0x00;   //JP    NZ, nn
+            //Morioの矩形ブロック転送(VDP Command 3)のテスト
+            program[pc++] = 0xaf;   //XOR   A
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x04;   //0x04
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x05;   //0x05
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x06;   //0x06
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x07;   //0x07
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x02;   //0x02
+            program[pc++] = 0x3c;   //INC   A
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x03;   //0x03
+            program[pc++] = 0x3e;   //LD    A, n
+            program[pc++] = 0xff;   //0xff
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x01;   //0x01
+
+            program[pc++] = 0x3e;   //LD    A, n
+            program[pc++] = 0x80;   //0x80
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x04;   //0x04
+
+            program[pc++] = 0x3e;   //LD    A, n
+            program[pc++] = 0x03;   //0x03
+            program[pc++] = 0xd3;   //OUT   n, A
+            program[pc++] = 0x00;   //0x00
             program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
+
+            pc = 0x0100;    //Morio画像データ
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x10; program[pc++] = 0x10; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x10; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x3d; program[pc++] = 0x24; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x10; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x20; program[pc++] = 0x10; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x20; program[pc++] = 0x10; program[pc++] = 0x10; program[pc++] = 0x10; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x10; program[pc++] = 0x10; program[pc++] = 0x10; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x10; program[pc++] = 0x10; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x10; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x01; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x01; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+            program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0xff; program[pc++] = 0xff; program[pc++] = 0xff; program[pc++] = 0xff; program[pc++] = 0xff; program[pc++] = 0xff; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00; program[pc++] = 0x00;
+
+            ////OUT(VDP Pixel Write) のテスト
+            //program[pc++] = 0x3e;   //LD    A, 0x00;
+            //program[pc++] = 0x00;   //(Destination Address(VRAM))
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x04;   //PORT 0x04: Destination Address 0(VRAM)
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x05;   //PORT 0x05: Destination Address 1(VRAM)
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x06;   //PORT 0x06: Destination Address 2(VRAM)
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x07;   //PORT 0x07: Destination Address 3(VRAM)
+            ////pc=0x000a
+            //program[pc++] = 0xaf;   //000A  XOR A
+            //program[pc++] = 0x47;   //000B  LD  B, A
+            //program[pc++] = 0x4f;   //000C  LD  C, A
+            //program[pc++] = 0x16;   //000D  LD  D, 0x40
+            //program[pc++] = 0x40;   //000E  LD  D, 0x40
+            ////LOOP1: 000F
+            //program[pc++] = 0x78;   //LD    A, B
+            ////program[pc++] = 0x3e;   //LD    A, 0xff;
+            ////program[pc++] = 0xff;   //Pixel Data
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x01;   //PORT 0x01: Pixel Data
+            //program[pc++] = 0x3e;   //LD    A, 0x02;
+            //program[pc++] = 0x02;   //(Pixel Write Command)
+            //program[pc++] = 0xd3;   //OUT   n. A
+            //program[pc++] = 0x00;   //PORT 0x00: VDP Command Port
+            //program[pc++] = 0x0d;   //DEC   C
+            //program[pc++] = 0xc2;   //JP    NZ, 000f
+            //program[pc++] = 0x0f;   //JP    NZ, nn
+            //program[pc++] = 0x00;   //JP    NZ, nn
+            //program[pc++] = 0x04;   //INC   B
+            //program[pc++] = 0x78;   //LD    A, B
+            //program[pc++] = 0xba;   //CP    D
+            //program[pc++] = 0xc2;   //JP    NZ, 000f
+            //program[pc++] = 0x0f;   //JP    NZ, nn
+            //program[pc++] = 0x00;   //JP    NZ, nn
+            //program[pc++] = 0xff;   // テスト実行を強制終了(ここで終了することを確認する)
 
             p.SetAndExecute(0, program);
 

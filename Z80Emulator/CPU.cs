@@ -6,7 +6,16 @@ using System.Collections.ObjectModel;
 
 namespace ProcessorEmulator
 {
-    public class Z80
+    public class CPU
+    {
+        /// <summary>主メモリ空間のサイズ</summary>
+        protected const int MEMSIZE = 64 * 1024;  //64KB
+        /// <summary>MEMSIZEの大きさのメモリ空間</summary>
+        protected byte[] mem;
+        public ReadOnlyCollection<byte> PeepedMEM { get; protected set; }
+    }
+
+    public class Z80 : CPU
     {
         //private
         //byte A;
@@ -70,11 +79,12 @@ namespace ProcessorEmulator
         public UInt16 SP { get; private set; }
         public UInt16 PC { get; private set; }
 
-        /// <summary>主メモリ空間のサイズ</summary>
-        const int MEMSIZE = 64 * 1024;  //64KB
-        /// <summary>MEMSIZEの大きさのメモリ空間</summary>
-        private byte[] mem;
-        public ReadOnlyCollection<byte> PeepedMEM { get; private set; }
+        ///// <summary>主メモリ空間のサイズ</summary>
+        //const int MEMSIZE = 64 * 1024;  //64KB
+        ///// <summary>MEMSIZEの大きさのメモリ空間</summary>
+        //private byte[] mem;
+        //public ReadOnlyCollection<byte> PeepedMEM { get; private set; }
+
         //ちなみに初期化子は親クラスのコンストラクタの実行に先行するらしい
         //public Array mem { get; set; }
         //public byte[] MEM {

@@ -32,8 +32,8 @@ namespace EmulatorTest
         //            let input, result = data in
         //            x.measureCPUTime Assert.That (lazy(PEFS.Problem_0000.run input)) (Is.EqualTo(result)) (sprintf "1234 * %A = %A" input result)
         ////            Assert.That (PEFS.Problem_0000.run input, Is.EqualTo(result), sprintf "1234 * %A = %A" input result)
-        private Z80 p = new Z80(0);
-        private VDP v = new VDP(256 * 1024);
+        private Z80 p;
+        private VDP v;
 
         //private void SetAndExecute(int address, byte[] mempart)
         //{
@@ -305,6 +305,8 @@ namespace EmulatorTest
         [SetUp]
         public void Init()
         {
+            p = new Z80(0);
+            v = new VDP(p, 256 * 1024);
             var m = new byte[0x10000];
             p.Memset(0, m);
             p.devNotify += v.Accept;
