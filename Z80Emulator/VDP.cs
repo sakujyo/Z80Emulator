@@ -6,6 +6,13 @@ using System.Collections.ObjectModel;
 
 namespace ProcessorEmulator
 {
+    public enum ScreenMode
+    {
+        One,
+        Two,
+        Three
+    }
+
     public class VDP
     {
         /// <summary>ビデオメモリ空間のサイズ</summary>
@@ -28,6 +35,9 @@ namespace ProcessorEmulator
         public byte address3 { get; private set; }
 
 
+        public ScreenMode screenMode { get; protected set; }
+
+
         public VDP(CPU p, UInt32 vramsize)
         {
             this.p = p;
@@ -45,6 +55,7 @@ namespace ProcessorEmulator
             address3 = 0;
 
             //current = 0x00000000;
+            screenMode = ScreenMode.One;
         }
 
         public void Accept(byte port, byte data)
@@ -83,8 +94,8 @@ namespace ProcessorEmulator
                             var width = 1 + (register1 & 0x0f);
                             for (int y = 0; y < height; y++) {
                                 for (int x = 0; x < width; x++) {
-                                    if ((address / 512) != ((address + x) / 512)) continue; //右端から左端にはみ出る場合はスキップ
-                                    vram[address + y * 512 + x] = p.PeepedMEM[source + y * width + x];
+                                    if ((address / screenWidth(screenMode)) != ((address + x) / screenWidth(screenMode))) continue; //右端から左端にはみ出る場合はスキップ
+                                    vram[address + y * screenWidth(screenMode) + x] = p.PeepedMEM[source + y * width + x];
                                 }
                             }
                             break;
@@ -120,6 +131,21 @@ namespace ProcessorEmulator
 
                 default:
                     break;
+            }
+        }
+
+        public uint screenWidth(ScreenMode screenMode)
+        {
+            switch (screenMode)
+            {
+                case ScreenMode.One:
+                    return 256;
+                case ScreenMode.Two:
+                    return 512;
+                case ScreenMode.Three:
+                    return 512;
+                default:
+                    return 512;
             }
         }
 

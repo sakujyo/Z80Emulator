@@ -51,7 +51,7 @@ namespace ProcessorEmulator
                 {
                     //var brightness = v.PeepedVRAM[y * 512 + x];
                     //var pixelcolor = Color.FromArgb(brightness, brightness, brightness);
-                    screen.SetPixel(x, y, palette[v.PeepedVRAM[y * 512 + x]]);
+                    screen.SetPixel(x, y, palette[v.PeepedVRAM[(int)((y * v.screenWidth(v.screenMode) / 512) * v.screenWidth(v.screenMode) + (x * v.screenWidth(v.screenMode) / 512))]]);
                 }
             }
             pictureBox1.Refresh();
