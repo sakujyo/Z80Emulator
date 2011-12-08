@@ -70,11 +70,11 @@ program:       /* EMPTY */ /* statement */
 statement:   /*MNEMOLD REG8 DELIM REG8
              |*/ 
 			 LABELDEFINITION		{ labeldef() }
-			 | INC reg8	{ increg8(yylval) } /* $x: yylval */
-			 | LD reg8 ',' reg8 { ldr8r8($2, $4) }
-			 /*| JP INTEGER { jp($2) } */
-			 | JP number { jp($2) }
-			 | JP LABEL { jplabel() }
+			 | INC reg8				{ increg8(yylval) }		/* $x: yylval */
+			 | LD reg8 ',' reg8		{ ldr8r8($2, $4) }
+			 | JP number			{ jp($2) }
+			 | JP LABEL				{ jplabel() }
+			 /*| JP INTEGER			{ jp($2) } */
 
 reg8:		REGB | REGC | REGD | REGE | REGH | REGL | REGA
 			| HLADDR
