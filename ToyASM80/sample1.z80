@@ -1,0 +1,39 @@
+START:
+	LD	B, B
+	LD	B, C
+	LD	B, D
+	LD	B, E
+	LD	B, H
+	LD	B, L
+	LD	B, (HL)
+	LD	B, A
+	LD	C, B
+	LD	C, C
+	LD	C, A
+	LD	D, B
+	LD	D, A
+	LD	E, B
+	LD	E, A
+	LD	H, B
+	LD	H, A
+	LD	L, B
+	LD	L, A
+	LD	(HL), B
+	LD	(HL), A
+	LD	A, B
+	LD	A, A
+
+LOOP1:
+	INC B
+	INC C
+	INC D
+	INC E
+	INC H
+	INC L
+	INC (HL)
+	INC A
+	JP	LOOP1
+	JP	END
+	JP	0x1234
+END:
+	JP	END

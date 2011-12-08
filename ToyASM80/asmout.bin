@@ -1,0 +1,60 @@
+
+Saw an mnemonic LD 
+Saw an register A
+Saw an register B
+object type: {00}
+ld: (reg 7) <- (reg 0)
+
+Saw an mnemonic LD 
+Saw an register B
+Saw an register A
+object type: {00}
+ld: (reg 0) <- (reg 7)
+
+
+Saw an mnemonic INC 
+Saw an register B
+object type: {00}
+reg8: 0
+
+Saw an mnemonic INC 
+Saw an register A
+object type: {00}
+reg8: 7
+
+
+Saw an label definition: BLABEL:
+bison label definition: (01172D15)BLABEL:
+finding symbol (BLABEL:)...symnum = 0, codeBytes = 4
+
+Saw an mnemonic LD 
+Saw an integer: 258
+object type: {00}
+jp: nn = (0102)
+
+Saw an mnemonic LD 
+Saw an hex integer: 0x900
+object type: {00}
+jp: nn = (0900)
+
+Saw an label definition: CLABEL:
+bison label definition: (01172D2F)CLABEL:
+finding symbol (CLABEL:)...comparing with (BLABEL@)
+symnum = 1, codeBytes = 10
+
+Saw an mnemonic LD 
+Saw an label: BLABEL
+finding symbol (BLABEL)...comparing with (BLABEL@)
+comparing with (CLABEL@)
+object type: {01}
+
+Saw an mnemonic LD 
+Saw an label: ALABEL
+finding symbol (ALABEL)...comparing with (BLABEL@)
+comparing with (CLABEL@)
+comparing with (BLABEî@)
+object type: {01}
+
+78, 47, 04, 3C, C3, 02, 01, C3, 00, 09, C3, 00, 00, C3, 00, 00, 
+Defined Label (BLABEL@)
+78, 47, 04, 3C, C3, 02, 01, C3, 00, 09, Reference: (2)01176D1C: 0000, Reference: (3)01176D2C: 0000, 
