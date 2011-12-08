@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="false">
-  <TopNode>[0-1004]C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll</TopNode>
+  <TopNode>[0-1007]C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll</TopNode>
   <SelectedNode>[0-1000]EmulatorTest.Z80Test</SelectedNode>
   <ExcludeCategories>false</ExcludeCategories>
   <Nodes>
-    <Node UniqueName="[0-1004]C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll" Expanded="true" />
-    <Node UniqueName="[0-1005]EmulatorTest" Expanded="true" />
+    <Node UniqueName="[0-1007]C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll" Expanded="true" />
+    <Node UniqueName="[0-1008]EmulatorTest" Expanded="true" />
     <Node UniqueName="[0-1000]EmulatorTest.Z80Test" Expanded="true" />
   </Nodes>
 </VisualState>

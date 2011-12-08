@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!--This file represents the results of running a test suite-->
-<test-results name="C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll" total="6" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2011-12-08" time="01:31:39">
+<test-results name="C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll" total="6" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2011-12-08" time="11:13:52">
   <environment nunit-version="2.5.10.11092" clr-version="2.0.50727.5448" os-version="Microsoft Windows NT 6.1.7601 Service Pack 1" platform="Win32NT" cwd="C:\sbin\NUnit 2.5.10\bin\net-2.0" machine-name="DC7700" user="m" user-domain="dc7700" />
   <culture-info current-culture="ja-JP" current-uiculture="ja-JP" />
-  <test-suite type="Assembly" name="C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll" executed="True" result="Success" success="True" time="0.275" asserts="0">
+  <test-suite type="Assembly" name="C:\Users\s\Documents\Visual Studio 2010\Projects\Z80Emulator\EmulatorTest\bin\Debug\EmulatorTest.dll" executed="True" result="Success" success="True" time="0.066" asserts="0">
     <results>
-      <test-suite type="Namespace" name="EmulatorTest" executed="True" result="Success" success="True" time="0.263" asserts="0">
+      <test-suite type="Namespace" name="EmulatorTest" executed="True" result="Success" success="True" time="0.064" asserts="0">
         <results>
-          <test-suite type="TestFixture" name="Z80Test" executed="True" result="Success" success="True" time="0.260" asserts="0">
+          <test-suite type="TestFixture" name="Z80Test" executed="True" result="Success" success="True" time="0.051" asserts="0">
             <results>
-              <test-case name="EmulatorTest.Z80Test.TestCallRet" description="CALL RET Test" executed="True" result="Success" success="True" time="0.106" asserts="6" />
-              <test-case name="EmulatorTest.Z80Test.TestINCDEC8BitREGS" description="INC DEC 8bitREGS Test" executed="True" result="Success" success="True" time="0.011" asserts="18" />
+              <test-case name="EmulatorTest.Z80Test.TestCallRet" description="CALL RET Test" executed="True" result="Success" success="True" time="0.000" asserts="6" />
+              <test-case name="EmulatorTest.Z80Test.TestINCDEC8BitREGS" description="INC DEC 8bitREGS Test" executed="True" result="Success" success="True" time="0.001" asserts="18" />
               <test-case name="EmulatorTest.Z80Test.TestJp" description="JP Test" executed="True" result="Success" success="True" time="0.001" asserts="1" />
-              <test-case name="EmulatorTest.Z80Test.TestLoad8bitImmediate" description="Load8bitImmediate Test" executed="True" result="Success" success="True" time="0.003" asserts="8" />
-              <test-case name="EmulatorTest.Z80Test.TestOutVDPPixelWrite" description="OUT Test 1(VDP Pixel Write)" executed="True" result="Success" success="True" time="0.004" asserts="1" />
-              <test-case name="EmulatorTest.Z80Test.TestPUSHPOP" description="PUSH POP Test" executed="True" result="Success" success="True" time="0.011" asserts="16" />
+              <test-case name="EmulatorTest.Z80Test.TestLoad8bitImmediate" description="Load8bitImmediate Test" executed="True" result="Success" success="True" time="0.000" asserts="8" />
+              <test-case name="EmulatorTest.Z80Test.TestOutVDPPixelWrite" description="OUT Test 1(VDP Pixel Write)" executed="True" result="Success" success="True" time="0.000" asserts="1" />
+              <test-case name="EmulatorTest.Z80Test.TestPUSHPOP" description="PUSH POP Test" executed="True" result="Success" success="True" time="0.000" asserts="16" />
             </results>
           </test-suite>
         </results>
