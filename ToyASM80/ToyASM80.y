@@ -226,8 +226,8 @@ int symbolNum(/* const */char *symbol)
 		//if (strncmp(symbol, symbolTable[i], s1l) == 0) {
 		if (strncmp(symbol, symbolTable[i], sl) == 0) {
 			// 一致した
-			//if (s1l == strlen(symbolTable[i])) return i;	// 見つかったらそのシンボル番号を返す	// break;	
-			if (sl == strlen(symbolTable[i])) return i;	// 見つかったらそのシンボル番号を返す	// break;	
+			//if (s1l == strlen(symbolTable[i])) return i;	// 見つかったらそのシンボル番号を返す	
+			if (sl == strlen(symbolTable[i])) return i;	// 見つかったらそのシンボル番号を返す	
 		}
 	}
 	//if (i != symbols) return i;		// 見つかったらそのシンボル番号を返す
@@ -240,12 +240,12 @@ int symbolNum(/* const */char *symbol)
 /*
 		if (symbol[sl - 1] == ':') {
 			p = malloc(sl + 1 - 1);		// NULL文字分の1バイトを足すが、":"の1バイトを引く
-			strncpy(p, symbol, sl - 1);	// 領域の末尾にはstrncpy()によりNULL文字が補われる
-			*(p + sl - 1) = '\0';
+			strncpy(p, symbol, sl - 1);
+			*(p + sl - 1) = '\0';		// n が strlen(symbol)より大きいわけではないので、ヌル終端させる
 		} else {
-			p = malloc(sl + 1);		// NULL文字分の1バイトを足すが、":"の1バイトを引く
-			strncpy(p, symbol, sl);	// 領域の末尾にはstrncpy()によりNULL文字が補われる
-			*(p + sl) = '\0';
+			p = malloc(sl + 1);		// NULL文字分の1バイトを足す
+			strncpy(p, symbol, sl);
+			*(p + sl) = '\0';		// n が strlen(symbol)より大きいわけではないので、ヌル終端させる
 		}
 */
 	symbolValue[symbols] = UNDEFINED_SYMBOL;
@@ -263,15 +263,15 @@ int pass2(void)
 	unsigned char *p;
 	int *t;					// 中間オブジェクトのタイプをトラバースするポインタ
 
-	p = codeArray;
+	/* p = codeArray;
 	for (i = 0; i < codeBytes; i++) {
 		 // とりま中身をそのまんま出す
 		 printf("%02X, ", (int)*p);
 		 p++;
 	}
-	printf("\n");
+	printf("\n"); */
 
-	printf("Defined Label (%s)\n", symbolTable[0]);
+	//printf("Defined Label (%s)\n", symbolTable[0]);
 	p = codeArray;
 	t = typeArray;
 	for (i = 0; i < codeCount; i++) {
