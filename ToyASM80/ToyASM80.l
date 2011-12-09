@@ -16,6 +16,9 @@
 #include "ToyASM80.tab.h"
 extern YYSTYPE yylval;
 
+#include <stdarg.h>
+void pmsg(const char *format, ...);
+
 %}
 
 /* マクロ;  正規表現 */
@@ -23,17 +26,13 @@ extern YYSTYPE yylval;
 delim         [ \t]
 whitesp       {delim}+
 
-
-/*
-BINPREFIX   b
-*/
-
 DIGIT       [0-9]
 INTEGER     {DIGIT}+
-	//HP			0x
 HEXINT		0x{DIGIT}+
-LABEL		[a-zA-Z][0-9a-zA-Z]+	
+
+LABEL		[a-zA-Z][0-9a-zA-Z]+
 	/* 今のところ長さ制限なし */
+
 LABELDEFINITION	{LABEL}:
 
 /* これはflexに入力ファイルが一つであることを示す. */
@@ -48,66 +47,66 @@ LABELDEFINITION	{LABEL}:
      */
 
 "A"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 7;
 			return REGA;
 		}
 
 "B"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 0;
 			return REGB;
 		}
 
 "C"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 1;
 			return REGC;
 		}
 
 "D"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 2;
 			return REGD;
 		}
 
 "E"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 3;
 			return REGE;
 		}
 
 "H"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 4;
 			return REGH;
 		}
 
 "L"		{
-			printf("Saw an register %s\n", yytext);
+			pmsg("Saw an register %s\n", yytext);
 			yylval = 5;
 			return REGL;
 		}
 
+"(HL)"	{
+			pmsg("Saw an register %s\n", yytext);
+			yylval = 6;
+			return HLADDR;
+	    }
+
 "LD"	{
-			printf("Saw an mnemonic LD \n");
+			pmsg("Saw an mnemonic LD \n");
 			return LD;
 	    }
 
 "INC"	{
-			printf("Saw an mnemonic INC \n");
+			pmsg("Saw an mnemonic INC \n");
 			return INC;
 	    }
 
 "JP"	{
-			printf("Saw an mnemonic JP \n");
+			pmsg("Saw an mnemonic JP \n");
 			return JP;
-	    }
-
-"(HL)"	{
-			printf("Saw an mnemonic REG8 \n");
-			yylval = 6;
-			return HLADDR;
 	    }
 
 	/*"x"		{
@@ -116,17 +115,17 @@ LABELDEFINITION	{LABEL}:
 	*/
 
 {LABEL}		{
-				printf("Saw an label: %s\n", yytext);
+				pmsg("Saw an label: %s\n", yytext);
 				return LABEL;
 			}
 
 {LABELDEFINITION} {
-				printf("Saw an label definition: %s\n", yytext);
+				pmsg("Saw an label definition: %s\n", yytext);
 				return LABELDEFINITION;
 			}
 
 {HEXINT}	{
-                printf("Saw an hex integer: %s\n", yytext);
+                pmsg("Saw an hex integer: %s\n", yytext);
 				sscanf(yytext, "%x", &yylval);
 				return HEXINT; 
 			}
@@ -136,14 +135,30 @@ LABELDEFINITION	{LABEL}:
                  * この規則は入力から整数を表示する.
                  * yytextには一致した文字列が含まれる.
                  */
-                printf("Saw an integer: %s\n", yytext);
+                pmsg("Saw an integer: %s\n", yytext);
 				sscanf(yytext, "%d", &yylval);
 				return INTEGER; 
             }
 
-{whitesp} { /* No action and no return */}
+{whitesp}	{
+				/* No action and no return */
+			}
 
-.           { return yytext[0]; /*それ以外をそのまま返してみる */ /* それ以外の文字は無視. */ }
+.           {
+				return yytext[0]; /*それ以外をそのまま返してみる */
+				/* それ以外の文字は無視. */
+			}
 
 %%
 /*** Cコード領域 ***/
+void pmsg(const char *format, ...)
+{
+	/* #ifdef DEBUG */
+	va_list argp;
+
+	va_start(argp, format);
+	//vfprintf(stderr, format, argp);
+
+	/* #endif */
+	//printf(format, msg);
+}
