@@ -71,7 +71,7 @@
 
 %% /* Grammar rules and actions follow.  */
 
-program:	/* EMPTY */
+program:    /* EMPTY */
             | program statement
     ;
 
@@ -216,7 +216,6 @@ int symbolNum(char *symbol)
             if (sl == strlen(symbolTable[i])) return i;	    // 見つかったらそのシンボル番号を返す	
         }
     }
-    //if (i != symbols) return i;		// 見つかったらそのシンボル番号を返す
 
     // 見つからなかった場合は新たにシンボル表に追加する
     // シンボル出現時の番号確認用と、シンボルの再定義(エラー)検出用
