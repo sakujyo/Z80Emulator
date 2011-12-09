@@ -3,10 +3,10 @@
 
 void debug(const char *format, ...)
 {
-	#ifdef DEBUG 
-	va_list argp;
+    #ifdef DEBUG 
+    va_list argp;
 
-	va_start(argp, format);
-	vfprintf(stderr, format, argp);
-	#endif
+    va_start(argp, format);
+    vfprintf(stderr, format, argp);
+    #endif
 }

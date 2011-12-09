@@ -10,6 +10,8 @@
     #include <stdlib.h>
     #include <string.h>
 
+    #include <stdarg.h>
+
     #define SYMTABSIZE          4096
     #define CODESIZE            (4096 * 4)
     #define UNDEFINED_SYMBOL    (0xffffffff)
@@ -34,6 +36,7 @@
     int pass2(void);
 
     void debug(const char *format, ...);
+    void trace(const char *format, ...);
 
     enum codetype {
         nolabel,
@@ -74,20 +77,20 @@ program:	/* EMPTY */
 
     /*line: */
 
-statement:  LABELDEFINITION		{ labeldef() }
-			| INC reg8				{ increg8(yylval) }		/* $x: yylval */
-			| LD reg8 ',' reg8		{ ldr8r8($2, $4) }
-			| JP number			{ jp($2) }
-			| JP LABEL				{ jplabel() }
-			/*| JP INTEGER			{ jp($2) } */
-	;
+statement:  LABELDEFINITION     { labeldef() }
+            | INC reg8          { increg8($2) }     /* $x: yylval */
+            | LD reg8 ',' reg8  { ldr8r8($2, $4) }
+            | JP number         { jp($2) }
+            | JP LABEL          { jplabel() }
+    ;
 
-reg8:		REGB | REGC | REGD | REGE | REGH | REGL | REGA
-			| HLADDR
-	;
+reg8:       REGB | REGC | REGD | REGE | REGH | REGL | REGA
+            | HLADDR
+    ;
 
-number:		INTEGER | HEXINT
-	;
+number:     INTEGER | HEXINT
+    ;
+
 %%
 
 
@@ -95,7 +98,6 @@ number:		INTEGER | HEXINT
         number on the stack and the token NUM, or the numeric code
         of the character read if not a number.  It skips all blanks
         and tabs, and returns 0 for end-of-input.  */
-     
 
 /*
  * メインプログラム.
@@ -104,31 +106,31 @@ number:		INTEGER | HEXINT
  */
 
 //char **symbols;
-char *symbolTable[SYMTABSIZE];			// シンボル文字列へのポインタ
-unsigned int symbolValue[SYMTABSIZE];	// シンボルに割り当てられた具体的なアドレス
-int symbols;							// 登録済みシンボル数
+char *symbolTable[SYMTABSIZE];          // シンボル文字列へのポインタ
+unsigned int symbolValue[SYMTABSIZE];   // シンボルに割り当てられた具体的なアドレス
+int symbols;                            // 登録済みシンボル数
 
-unsigned char codeArray[CODESIZE];		// 中間オブジェクトのバイト表現の配列
-int codeCount;							// 出力済みの中間オブジェクトの数
-int codeBytes;							// 出力済みの中間オブジェクトのバイト数
-int sizeArray[CODESIZE];				// 中間オブジェクトのマシンコード・サイズ
-int typeArray[CODESIZE];				// 中間オブジェクトのオブジェクト・タイプ
-unsigned int usedSymbol[CODESIZE];		// 中間オブジェクトで使用したシンボル
+unsigned char codeArray[CODESIZE];      // 中間オブジェクトのバイト表現の配列
+int codeCount;                          // 出力済みの中間オブジェクトの数
+int codeBytes;                          // 出力済みの中間オブジェクトのバイト数
+int sizeArray[CODESIZE];                // 中間オブジェクトのマシンコード・サイズ
+int typeArray[CODESIZE];                // 中間オブジェクトのオブジェクト・タイプ
+unsigned int usedSymbol[CODESIZE];      // 中間オブジェクトで使用したシンボル
 
 int main(void)
 {
-	int result;
-	symbols = 0;
-	codeCount = 0;
-	codeBytes = 0;
-	/* symbols = malloc(SYMTABSIZE); */
-	result = yyparse();
+    int result;
+    symbols = 0;
+    /* symbols = malloc(SYMTABSIZE); */
+    codeCount = 0;
+    codeBytes = 0;
+    result = yyparse();
 
-	/* pass 2 */
-	if (result) return result;
-	result = pass2();
+    /* pass 2 */
+    if (result) return result;
+    result = pass2();
 
-	return result;
+    return result;
 }
 
 /* Called by yyparse on error.  */
@@ -140,155 +142,130 @@ int main(void)
 
 void putobj(int code)
 {
-	//debug("object code: {%02x}\n", code);
-	codeArray[codeBytes++] = (unsigned char)code;
+    //debug("object code: {%02x}\n", code);
+    codeArray[codeBytes++] = (unsigned char)code;
 }
 
 void puttype(int codeSize, int type)
 {
-	debug("object type: {%02x}\n", type);
-	sizeArray[codeCount] = codeSize;		// codeCount 番目の中間オブジェクトのサイズ
-	typeArray[codeCount] = type;			// 出力する中間オブジェクトのタイプ
-	codeCount++;							// 出力済みの中間オブジェクトの数のカウントアップ
+    debug("object type: {%02x}\n", type);
+    sizeArray[codeCount] = codeSize;		// codeCount 番目の中間オブジェクトのサイズ
+    typeArray[codeCount] = type;			// 出力する中間オブジェクトのタイプ
+    codeCount++;							// 出力済みの中間オブジェクトの数のカウントアップ
 }
 
 void increg8(int reg8)
 {
-	puttype(1, nolabel);
-	putobj(0x04 | (reg8 << 3));
-
-	debug("reg8: %d\n", reg8);
+    debug("reg8: %d\n", reg8);
+    puttype(1, nolabel);
+    putobj(0x04 | (reg8 << 3));
 }
 
 void ldr8r8(int dest, int src)
 {
-	puttype(1, nolabel);
-	putobj(0x40 | (dest << 3) | src);
-	debug("ld: (reg %d) <- (reg %d)\n", dest, src);
+    debug("ld: (reg %d) <- (reg %d)\n", dest, src);
+    puttype(1, nolabel);
+    putobj(0x40 | (dest << 3) | src);
 }
 
 void jp(int absoluteAddress)
 {
-	puttype(3, nolabel);
-	putobj(0xc3);
-	putobj((absoluteAddress) & 0x00ff);
-	putobj(((absoluteAddress) >> 8) & 0x00ff);
-	printf("jp: nn = (%04x)\n", absoluteAddress);
+    puttype(3, nolabel);
+    putobj(0xc3);
+    putobj((absoluteAddress) & 0x00ff);
+    putobj(((absoluteAddress) >> 8) & 0x00ff);
+    trace("jp: nn = (%04x)\n", absoluteAddress);
 }
 
 void jplabel(void)
 {
-	usedSymbol[codeCount] = symbolNum(yytext);
+    usedSymbol[codeCount] = symbolNum(yytext);
 
-	puttype(3, labeled);
-	putobj(0xc3);
-	putobj(0x00);
-	putobj(0x00);
-
+    puttype(3, labeled);
+    putobj(0xc3);
+    putobj(0x00);
+    putobj(0x00);
 }
 
 void labeldef(void)
 {
-	int symNum;
-/*
-	size_t sl = strlen(yytext);
+    int symNum;
 
-	char *p = malloc(sl);
-	printf("bison label definition: (%p)%s\n", yytext, yytext);
-	strncpy(p, yytext, sl);
-	symbolTable[symbols++] = p;
-*/
-	printf("Bison LABEL definition: (%p)%s\n", yytext, yytext);
-	//symbolNum(yytext);
-	symNum = symbolNum(yytext);
-	printf("symnum = %d, codeBytes = %d\n", symNum, codeBytes);
-	symbolValue[symNum] = codeBytes;	// TODO: ORG 実装とこの行への対応
-	//symbolTable[symbols++] = yytext;			// シンボル出現時の番号確認用と、シンボルの再定義検出用
+    trace("Bison LABEL definition: (%p)%s\n", yytext, yytext);
+    symNum = symbolNum(yytext);
+    trace("symnum = %d, codeBytes = %d\n", symNum, codeBytes);
+    symbolValue[symNum] = codeBytes;    // TODO: ORG 実装とこの行への対応
+    //symbolTable[symbols++] = yytext;  // これはやっちゃダメなパターンのやつ
 }
 
 int symbolNum(char *symbol)
 {
-	int i;
-	size_t sl, s1l;
-	char *p;
+    int i;
+    size_t sl;
+    char *p;
 
-	printf("finding symbol (%s)...\n", symbol);
+    sl = strlen(symbol);
+    if (symbol[sl - 1] == ':') sl--;    // ラベル定義の場合は、":"の1バイトを引く
 
-	sl = strlen(symbol);
-	if (symbol[sl - 1] == ':') sl--;
+    trace("finding symbol (%s)...\n", symbol);
+    for (i = 0; i < symbols; i++) {
+        // 登録済みのシンボルがないか検索する
+        trace("comparing with (%s)\n", symbolTable[i]);
+        if (strncmp(symbol, symbolTable[i], sl) == 0) {
+            // 一致した
+            if (sl == strlen(symbolTable[i])) return i;	    // 見つかったらそのシンボル番号を返す	
+        }
+    }
+    //if (i != symbols) return i;		// 見つかったらそのシンボル番号を返す
 
-	for (i = 0; i < symbols; i++) {
-		// 登録済みのシンボルがないか検索する
-		printf("comparing with (%s)\n", symbolTable[i]);
-		//s1l = strlen(symbol);
-		//if (strncmp(symbol, symbolTable[i], s1l) == 0) {
-		if (strncmp(symbol, symbolTable[i], sl) == 0) {
-			// 一致した
-			//if (s1l == strlen(symbolTable[i])) return i;	// 見つかったらそのシンボル番号を返す	
-			if (sl == strlen(symbolTable[i])) return i;	// 見つかったらそのシンボル番号を返す	
-		}
-	}
-	//if (i != symbols) return i;		// 見つかったらそのシンボル番号を返す
+    // 見つからなかった場合は新たにシンボル表に追加する
+    // シンボル出現時の番号確認用と、シンボルの再定義(エラー)検出用
+    p = malloc(sl + 1);		// NULL文字分の1バイトを足す
+    strncpy(p, symbol, sl);	// 領域の末尾にはstrncpy()によりNULL文字が補われる
+    *(p + sl) = '\0';
 
-	// 見つからなかった場合は新たにシンボル表に追加する
+    symbolValue[symbols] = UNDEFINED_SYMBOL;
+    symbolTable[symbols++] = p;
+    trace("symbol (%s) added.\n", p);
 	
-	p = malloc(sl + 1);		// NULL文字分の1バイトを足すが、":"の1バイトを引く
-	strncpy(p, symbol, sl);	// 領域の末尾にはstrncpy()によりNULL文字が補われる
-	*(p + sl) = '\0';
-/*
-		if (symbol[sl - 1] == ':') {
-			p = malloc(sl + 1 - 1);		// NULL文字分の1バイトを足すが、":"の1バイトを引く
-			strncpy(p, symbol, sl - 1);
-			*(p + sl - 1) = '\0';		// n が strlen(symbol)より大きいわけではないので、ヌル終端させる
-		} else {
-			p = malloc(sl + 1);		// NULL文字分の1バイトを足す
-			strncpy(p, symbol, sl);
-			*(p + sl) = '\0';		// n が strlen(symbol)より大きいわけではないので、ヌル終端させる
-		}
-*/
-	symbolValue[symbols] = UNDEFINED_SYMBOL;
-	symbolTable[symbols++] = p;
-	printf("symbol (%s) added.\n", p);
-	
-	return i;
+    return i;
 }
 
 int pass2(void)
 {
-	// 最終コード生成部
-	int i, j;
-	unsigned int address;
-	unsigned char *p;
-	int *t;					// 中間オブジェクトのタイプをトラバースするポインタ
+    // 最終コード生成部
+    int i, j;
+    unsigned int address;
+    unsigned char *p;
+    int *t;                 // 中間オブジェクトのタイプをトラバースするポインタ
 
-	/* p = codeArray;
-	for (i = 0; i < codeBytes; i++) {
-		 // とりま中身をそのまんま出す
-		 debug("%02X, ", (int)*p);
-		 p++;
-	}
-	debug("\n"); */
+    p = codeArray;
+    t = typeArray;
+    for (i = 0; i < codeCount; i++) {
+        if (*(t++) == labeled) {	// 0x??, 0xLL, 0xHHタイプ
+            address = symbolValue[usedSymbol[i]];
+            //printf("Reference: (%d)%p: %04X, ", usedSymbol[i], symbolTable[usedSymbol[i]], address);
+            if (address == UNDEFINED_SYMBOL) {
+                //yyerror()?
+                printf("Undefined Symbol: \"%s\".\n", symbolTable[usedSymbol[i]]);
+            }
+            printf("%02X, %02X, %02X, ", p[0], address & 0x00ff, (address >> 8) & 0x00ff);			
+            p += sizeArray[i];
+        } else {
+            for (j = 0; j < sizeArray[i]; j++) {
+                printf("%02X, ", (int)*p);
+                p++;
+            }
+        }
+    }
 
-	//printf("Defined Label (%s)\n", symbolTable[0]);
-	p = codeArray;
-	t = typeArray;
-	for (i = 0; i < codeCount; i++) {
-		if (*(t++) == labeled) {	// 0x??, 0xLL, 0xHHタイプ
-			address = symbolValue[usedSymbol[i]];
-			//printf("Reference: (%d)%p: %04X, ", usedSymbol[i], symbolTable[usedSymbol[i]], address);
-			if (address == UNDEFINED_SYMBOL) {
-				//yyerror()?
-				printf("Undefined Symbol: \"%s\".\n", symbolTable[usedSymbol[i]]);
-			}
-			printf("%02X, %02X, %02X, ", p[0], address & 0x00ff, (address >> 8) & 0x00ff);			
-			p += sizeArray[i];
-		} else {
-			for (j = 0; j < sizeArray[i]; j++) {
-				printf("%02X, ", (int)*p);
-				p++;
-			}
-		}
-	}
+    return 0;
+}
 
-	return 0;
+void trace(const char *format, ...)
+{
+    va_list argp;
+
+    va_start(argp, format);
+    //vfprintf(stderr, format, argp);
 }

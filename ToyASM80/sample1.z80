@@ -8,7 +8,6 @@ START:
 	LD	B, (HL)
 	LD	B, A
 	LD	C, B
-	LD	C, C
 	LD	C, A
 	LD	D, B
 	LD	D, A
