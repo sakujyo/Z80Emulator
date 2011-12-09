@@ -53,7 +53,8 @@
      INTEGER = 269,
      HEXINT = 270,
      LABEL = 271,
-     LABELDEFINITION = 272
+     LABELDEFINITION = 272,
+     NEWLINE = 273
    };
 #endif
 

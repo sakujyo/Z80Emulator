@@ -79,8 +79,8 @@
     <None Include="run.bat" />
     <None Include="sample1.z80" />
     <None Include="ToyASM80.l" />
-    <None Include="ToyASM80.tab.c" />
     <None Include="ToyASM80.y" />
+    <None Include="trace.c" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

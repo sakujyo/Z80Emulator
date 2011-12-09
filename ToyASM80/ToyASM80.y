@@ -1,49 +1,49 @@
-/* Toy Assembler for Z80(Limited Instructions).  */
+/* Toy Assembler for Z80(Limited Instructions). */
 
 %{
-	//#define YYSTYPE double
-	#define YYSTYPE int
-	#include <stdio.h>
-	#include <ctype.h>
-	#include <math.h>
+    //#define YYSTYPE double
+    #define YYSTYPE int
+    #include <stdio.h>
+    #include <ctype.h>
+    #include <math.h>
 
-	#include <stdlib.h>
-	#include <string.h>
-	#include <stdarg.h>
+    #include <stdlib.h>
+    #include <string.h>
 
-	#define SYMTABSIZE 4096
-	#define CODESIZE (4096 * 4)
-	#define UNDEFINED_SYMBOL (0xffffffff)
-	extern char *yytext;
+    #define SYMTABSIZE          4096
+    #define CODESIZE            (4096 * 4)
+    #define UNDEFINED_SYMBOL    (0xffffffff)
+    extern char *yytext;
 
-	int yylex(void);
-	int yyparse(void);
-	void yyerror (char const *);
+    int yylex(void);
+    int yyparse(void);
+    void yyerror (char const *);
+	
+    // 単なるWarning対策。インタフェース変わる可能性あり
+    void yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep);
 
-	void putobj(int code);
-	void puttype(int codeSize, int type);
-	void increg8(int reg8);
-	void ldr8r8(int dest, int src);
-	void jp(int absoluteAddress);
-	void jplabel(void);
-	void labeldef(void);
-	int symbolNum(char *symbol);
+    void putobj(int code);
+    void puttype(int codeSize, int type);
+    void increg8(int reg8);
+    void ldr8r8(int dest, int src);
+    void jp(int absoluteAddress);
+    void jplabel(void);
+    void labeldef(void);
+    int symbolNum(char *symbol);
 
-	int pass2(void);
+    int pass2(void);
 
-	void debug(const char *format, ...);
+    void debug(const char *format, ...);
 
-	enum codetype {
-		nolabel,
-		labeled,
-		labelActualValue
-	};
+    enum codetype {
+        nolabel,
+        labeled,
+        labelActualValue
+    };
 
 %}
-     
 
-//%token NUM
-	//%token REG8
+
 %token REGA
 
 %token REGB
@@ -55,7 +55,6 @@
 
 %token HLADDR
 
-	//%token MNEMOLD
 %token INC
 %token LD
 %token JP
@@ -64,25 +63,24 @@
 %token HEXINT
 %token LABEL
 %token LABELDEFINITION
-     
+
+%token NEWLINE
+
 %% /* Grammar rules and actions follow.  */
 
-program:	/* EMPTY */ /* statement */
-            | line program
-	;
+program:	/* EMPTY */
+            | program statement
+    ;
 
-line:		/* EMPTY */|
-			statement
-	;
+    /*line: */
 
-statement:  /*MNEMOLD REG8 DELIM REG8
-            |*/ 
-			LABELDEFINITION		{ labeldef() }
+statement:  LABELDEFINITION		{ labeldef() }
 			| INC reg8				{ increg8(yylval) }		/* $x: yylval */
 			| LD reg8 ',' reg8		{ ldr8r8($2, $4) }
 			| JP number			{ jp($2) }
 			| JP LABEL				{ jplabel() }
 			/*| JP INTEGER			{ jp($2) } */
+	;
 
 reg8:		REGB | REGC | REGD | REGE | REGH | REGL | REGA
 			| HLADDR
@@ -148,7 +146,7 @@ void putobj(int code)
 
 void puttype(int codeSize, int type)
 {
-	pmsg("object type: {%02x}\n", type);
+	debug("object type: {%02x}\n", type);
 	sizeArray[codeCount] = codeSize;		// codeCount 番目の中間オブジェクトのサイズ
 	typeArray[codeCount] = type;			// 出力する中間オブジェクトのタイプ
 	codeCount++;							// 出力済みの中間オブジェクトの数のカウントアップ
@@ -293,16 +291,4 @@ int pass2(void)
 	}
 
 	return 0;
-}
-
-void debug(const char *format, ...)
-{
-	/* #ifdef DEBUG */
-	va_list argp;
-
-	va_start(argp, format);
-	vfprintf(stderr, format, argp);
-
-	/* #endif */
-	//printf(format, msg);
 }

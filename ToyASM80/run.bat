@@ -4,7 +4,7 @@ REM del /P ToyASM80.tab.c
 del ToyASM80.tab.c
 del lex.yy.obj
 del ToyASM80.tab.obj
-del ToyASM80.tab.tds
+del ToyASM80.tds
 
 REM 実行テスト
-ToyASM80.tab.exe 0< sample1.z80
+ToyASM80.exe 0< sample1.z80

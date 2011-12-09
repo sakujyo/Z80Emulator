@@ -1,5 +1,5 @@
 START:
-	LD	B, B
+	LD	B, B	;comment sample
 	LD	B, C
 	LD	B, D
 	LD	B, E
