@@ -1,14 +1,16 @@
 /* Toy Assembler for Z80(Limited Instructions).  */
-     
+
 %{
 	//#define YYSTYPE double
 	#define YYSTYPE int
-    #include <stdio.h>
-    #include <ctype.h>
-    #include <math.h>
+	#include <stdio.h>
+	#include <ctype.h>
+	#include <math.h>
 
 	#include <stdlib.h>
 	#include <string.h>
+	#include <stdarg.h>
+
 	#define SYMTABSIZE 4096
 	#define CODESIZE (4096 * 4)
 	#define UNDEFINED_SYMBOL (0xffffffff)
@@ -28,6 +30,8 @@
 	int symbolNum(char *symbol);
 
 	int pass2(void);
+
+	void debug(const char *format, ...);
 
 	enum codetype {
 		nolabel,
@@ -63,18 +67,22 @@
      
 %% /* Grammar rules and actions follow.  */
 
-program:       /* EMPTY */ /* statement */
-             | statement program
+program:	/* EMPTY */ /* statement */
+            | line program
 	;
 
-statement:   /*MNEMOLD REG8 DELIM REG8
-             |*/ 
-			 LABELDEFINITION		{ labeldef() }
-			 | INC reg8				{ increg8(yylval) }		/* $x: yylval */
-			 | LD reg8 ',' reg8		{ ldr8r8($2, $4) }
-			 | JP number			{ jp($2) }
-			 | JP LABEL				{ jplabel() }
-			 /*| JP INTEGER			{ jp($2) } */
+line:		/* EMPTY */|
+			statement
+	;
+
+statement:  /*MNEMOLD REG8 DELIM REG8
+            |*/ 
+			LABELDEFINITION		{ labeldef() }
+			| INC reg8				{ increg8(yylval) }		/* $x: yylval */
+			| LD reg8 ',' reg8		{ ldr8r8($2, $4) }
+			| JP number			{ jp($2) }
+			| JP LABEL				{ jplabel() }
+			/*| JP INTEGER			{ jp($2) } */
 
 reg8:		REGB | REGC | REGD | REGE | REGH | REGL | REGA
 			| HLADDR
@@ -117,21 +125,13 @@ int main(void)
 	codeBytes = 0;
 	/* symbols = malloc(SYMTABSIZE); */
 	result = yyparse();
+
 	/* pass 2 */
-	/* not implemented */
 	if (result) return result;
 	result = pass2();
 
 	return result;
 }
-
-/*int
-     main (void)
-     {
-		symbols = malloc(SYMTABSIZE);
-		return yyparse();
-     }*/
-
 
 /* Called by yyparse on error.  */
      void
@@ -142,13 +142,13 @@ int main(void)
 
 void putobj(int code)
 {
-	//printf("object code: {%02x}\n", code);
+	//debug("object code: {%02x}\n", code);
 	codeArray[codeBytes++] = (unsigned char)code;
 }
 
 void puttype(int codeSize, int type)
 {
-	printf("object type: {%02x}\n", type);
+	pmsg("object type: {%02x}\n", type);
 	sizeArray[codeCount] = codeSize;		// codeCount 番目の中間オブジェクトのサイズ
 	typeArray[codeCount] = type;			// 出力する中間オブジェクトのタイプ
 	codeCount++;							// 出力済みの中間オブジェクトの数のカウントアップ
@@ -159,14 +159,14 @@ void increg8(int reg8)
 	puttype(1, nolabel);
 	putobj(0x04 | (reg8 << 3));
 
-	printf("reg8: %d\n", reg8);
+	debug("reg8: %d\n", reg8);
 }
 
 void ldr8r8(int dest, int src)
 {
 	puttype(1, nolabel);
 	putobj(0x40 | (dest << 3) | src);
-	printf("ld: (reg %d) <- (reg %d)\n", dest, src);
+	debug("ld: (reg %d) <- (reg %d)\n", dest, src);
 }
 
 void jp(int absoluteAddress)
@@ -200,7 +200,7 @@ void labeldef(void)
 	strncpy(p, yytext, sl);
 	symbolTable[symbols++] = p;
 */
-	printf("bison label definition: (%p)%s\n", yytext, yytext);
+	printf("Bison LABEL definition: (%p)%s\n", yytext, yytext);
 	//symbolNum(yytext);
 	symNum = symbolNum(yytext);
 	printf("symnum = %d, codeBytes = %d\n", symNum, codeBytes);
@@ -208,13 +208,13 @@ void labeldef(void)
 	//symbolTable[symbols++] = yytext;			// シンボル出現時の番号確認用と、シンボルの再定義検出用
 }
 
-int symbolNum(/* const */char *symbol)
+int symbolNum(char *symbol)
 {
 	int i;
 	size_t sl, s1l;
 	char *p;
 
-	printf("finding symbol (%s)...", symbol);
+	printf("finding symbol (%s)...\n", symbol);
 
 	sl = strlen(symbol);
 	if (symbol[sl - 1] == ':') sl--;
@@ -266,10 +266,10 @@ int pass2(void)
 	/* p = codeArray;
 	for (i = 0; i < codeBytes; i++) {
 		 // とりま中身をそのまんま出す
-		 printf("%02X, ", (int)*p);
+		 debug("%02X, ", (int)*p);
 		 p++;
 	}
-	printf("\n"); */
+	debug("\n"); */
 
 	//printf("Defined Label (%s)\n", symbolTable[0]);
 	p = codeArray;
@@ -293,4 +293,16 @@ int pass2(void)
 	}
 
 	return 0;
+}
+
+void debug(const char *format, ...)
+{
+	/* #ifdef DEBUG */
+	va_list argp;
+
+	va_start(argp, format);
+	vfprintf(stderr, format, argp);
+
+	/* #endif */
+	//printf(format, msg);
 }
