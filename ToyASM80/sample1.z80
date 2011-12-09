@@ -1,3 +1,4 @@
+    ORG 0x5678
 START:
 	LD	B, B	;comment sample
 	LD	B, C

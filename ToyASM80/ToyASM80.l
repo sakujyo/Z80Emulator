@@ -110,6 +110,11 @@ LABELDEFINITION     {LABEL}:
             return JP;
         }
 
+"ORG"   {
+            debug("Saw an pseudo-instruction ORG \n");
+            return ORG;
+        }
+
     /*"x"   {
                 printf("Saw an hexadecimal prefex: \n");
             }

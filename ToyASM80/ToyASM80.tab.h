@@ -54,7 +54,8 @@
      HEXINT = 270,
      LABEL = 271,
      LABELDEFINITION = 272,
-     NEWLINE = 273
+     ORG = 273,
+     NEWLINE = 274
    };
 #endif
 
