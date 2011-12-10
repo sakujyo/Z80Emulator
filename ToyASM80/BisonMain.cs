@@ -80,7 +80,7 @@ void increg8(int reg8)
     snprintf(p, 24, "INC     %s               ", reg8name[reg8]);
     listArray[codeCount] = p;
     
-    puttype(1, nolabel);
+    puttype(1, NOLABEL);
     putobj(0x04 | (reg8 << 3));
 }
 
@@ -92,7 +92,7 @@ void out(int port)
     snprintf(p, 24, "OUT     0x%02X            ", port);
     listArray[codeCount] = p;
     
-    puttype(2, nolabel);
+    puttype(2, NOLABEL);
     putobj(0xd3);
     putobj(port & 0x00ff);
 }
@@ -104,7 +104,7 @@ void ldr8r8(int dest, int src)
     p = malloc((size_t)25);
     snprintf(p, 24, "LD      %s, %s            ", reg8name[dest], reg8name[src]);
     listArray[codeCount] = p;
-    puttype(1, nolabel);
+    puttype(1, NOLABEL);
     putobj(0x40 | (dest << 3) | src);
 }
 
@@ -115,7 +115,7 @@ void ldregim8(int dest, int immediate)
     p = malloc((size_t)25);
     snprintf(p, 24, "LD      %s, 0x%02X         ", reg8name[dest], immediate);
     listArray[codeCount] = p;
-    puttype(2, nolabel);
+    puttype(2, NOLABEL);
     putobj(0x06 | (dest << 3));
     putobj(immediate);
 }
@@ -130,7 +130,7 @@ void jp(int absoluteAddress)
     p = malloc((size_t)25);
     snprintf(p, 24, "JP      0x%04X            ", absoluteAddress);
     listArray[codeCount] = p;
-    puttype(3, nolabel);
+    puttype(3, NOLABEL);
     putobj(0xc3);
     putobj((absoluteAddress) & 0x00ff);
     putobj(((absoluteAddress) >> 8) & 0x00ff);
@@ -145,7 +145,7 @@ void jplabel(void)
     p = malloc((size_t)25);
     snprintf(p, 24, "JP      %s               ", yytext);
     listArray[codeCount] = p;
-    puttype(3, labeled);
+    puttype(3, LABELED);
     putobj(0xc3);
     putobj(0x00);
     putobj(0x00);
@@ -169,15 +169,13 @@ void deflabel(void)
 
     trace("Bison LABEL definition: (%p)%s\n", yytext, yytext);
     symNum = symbolNum(yytext);
-    trace("symnum = %d, codeBytes = %d\n", symNum, codeBytes);
-    //symbolValue[symNum] = codeBytes;    // TODO: ORG 実装とこの行への対応
-    symbolValue[symNum] = relocAddress + codeBytes;    // TODO: ORG 実装とこの行への対応
-    //symbolTable[symbols++] = yytext;  // これはやっちゃダメなパターンのやつ
+    trace("symnum = %d, address = %d\n", symNum, relocAddress + codeBytes);
+    symbolValue[symNum] = relocAddress + codeBytes;    // ORG 対応
 
     p = malloc((size_t)25);
     snprintf(p, 24, "%s                       ", yytext);
     listArray[codeCount] = p;
-    puttype(0, labeldef);
+    puttype(0, LABELDEF);
 }
 
 int symbolNum(char *symbol)
@@ -207,6 +205,7 @@ int symbolNum(char *symbol)
 
     symbolValue[symbols] = UNDEFINED_SYMBOL;
     symbolTable[symbols++] = p;
+    //symbolTable[symbols++] = yytext;  // これはやっちゃダメなパターンのやつ
     trace("symbol (%s) added.\n", p);
 	
     return i;
@@ -229,7 +228,7 @@ int pass2(void)
         //fprintf(stdout, "%04X:", (p - codeArray));
         fprintf(stdout, "%04X:", (relocAddress + (p - codeArray)));
         switch (*(t++)) {
-        case labeled:           // 0x??, 0xLL, 0xHHタイプ
+        case LABELED:           // 0x??, 0xLL, 0xHHタイプ
             address = symbolValue[usedSymbol[i]];
             //printf("Reference: (%d)%p: %04X, ", usedSymbol[i], symbolTable[usedSymbol[i]], address);
             if (address == UNDEFINED_SYMBOL) {
@@ -240,7 +239,7 @@ int pass2(void)
             p += sizeArray[i];
             fprintf(stdout, "          %s;comments\n", listArray[i]);
             break;
-        case labeldef:
+        case LABELDEF:
             fprintf(stdout, "%s\n", listArray[i]);
             break;
         default:
