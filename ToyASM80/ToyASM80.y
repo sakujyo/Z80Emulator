@@ -3,14 +3,8 @@
 %{
     //#define YYSTYPE double
     #define YYSTYPE int
-    #include <stdio.h>
-    #include <ctype.h>
-    #include <math.h>
 
     #include <stdlib.h>
-    #include <string.h>
-
-    #include <stdarg.h>
 
     #define SYMTABSIZE          (4096)
     #define CODESIZE            (4096 * 4)
@@ -24,8 +18,6 @@
     // 単なるWarning対策。インタフェース変わる可能性あり
     void yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep);
 
-    void putobj(int code);
-    void puttype(int codeSize, int type);
     void increg8(int reg8);
     void ldr8r8(int dest, int src);
     void jp(int absoluteAddress);
@@ -34,19 +26,7 @@
     void ldregim8(int dest, int immediate);
     void deflabel(void);
     void org(int address);
-    int symbolNum(char *symbol);
 
-    int pass2(void);
-
-    void debug(const char *format, ...);
-    void trace(const char *format, ...);
-
-    enum codetype {
-        NOLABEL,
-        LABELED,            // ラベルのアドレスの埋め込み
-        LABELDEF,           // ラベルのアドレスのリスティング出力用
-        ORIGIN              // アドレス指定
-    };
 
 %}
 

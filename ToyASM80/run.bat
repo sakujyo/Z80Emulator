@@ -7,4 +7,4 @@ del ToyASM80.tab.obj
 del ToyASM80.tds
 
 REM 実行テスト
-ToyASM80.exe 0< sample1.z80
+ToyASM80.exe sample1.z80

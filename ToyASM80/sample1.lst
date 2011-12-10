@@ -1,0 +1,54 @@
+2000:                   ORG     0x2000          ;comments
+2000:START:                  
+2000:3E 00              LD      A, 0x00         ;comments
+2002:D3 04              OUT     0x04            ;comments
+2004:D3 05              OUT     0x05            ;comments
+2006:D3 06              OUT     0x06            ;comments
+2008:D3 07              OUT     0x07            ;comments
+200A:D3 02              OUT     0x02            ;comments
+200C:3C                 INC     A               ;comments
+200D:D3 03              OUT     0x03            ;comments
+200F:3E FF              LD      A, 0xFF         ;comments
+2011:D3 01              OUT     0x01            ;comments
+2013:3E 80              LD      A, 0x80         ;comments
+2015:D3 04              OUT     0x04            ;comments
+2017:3E 03              LD      A, 0x03         ;comments
+2019:D3 00              OUT     0x00            ;comments
+201B:BLAB:                   
+201B:40                 LD      B, B            ;comments
+201C:41                 LD      B, C            ;comments
+201D:42                 LD      B, D            ;comments
+201E:43                 LD      B, E            ;comments
+201F:44                 LD      B, H            ;comments
+2020:45                 LD      B, L            ;comments
+2021:46                 LD      B, (HL)         ;comments
+2022:47                 LD      B, A            ;comments
+2023:48                 LD      C, B            ;comments
+2024:4F                 LD      C, A            ;comments
+2025:50                 LD      D, B            ;comments
+2026:57                 LD      D, A            ;comments
+2027:58                 LD      E, B            ;comments
+2028:5F                 LD      E, A            ;comments
+2029:60                 LD      H, B            ;comments
+202A:67                 LD      H, A            ;comments
+202B:68                 LD      L, B            ;comments
+202C:6F                 LD      L, A            ;comments
+202D:70                 LD      (HL), B         ;comments
+202E:77                 LD      (HL), A         ;comments
+202F:78                 LD      A, B            ;comments
+2030:7F                 LD      A, A            ;comments
+2031:LOOP1:                  
+2031:04                 INC     B               ;comments
+2032:0C                 INC     C               ;comments
+2033:14                 INC     D               ;comments
+2034:1C                 INC     E               ;comments
+2035:24                 INC     H               ;comments
+2036:2C                 INC     L               ;comments
+2037:34                 INC     (HL)            ;comments
+2038:3C                 INC     A               ;comments
+2039:D3 03              OUT     0x03            ;comments
+203B:C3 31 20           JP      LOOP1           ;comments
+203E:C3 44 20           JP      END             ;comments
+2041:C3 34 12           JP      0x1234          ;comments
+2044:END:                    
+2044:C3 44 20           JP      END             ;comments

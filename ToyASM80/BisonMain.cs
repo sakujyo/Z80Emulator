@@ -4,6 +4,14 @@
  * 字句解析を呼び出し、処理が済むと終了する. 
  */
 
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#include <stdarg.h>
+
+#define MAXFNLEN    (251)           // アセンブリ・ソースの".z80"を除いた最大長さ
+
 struct CodeObj {
     int Type;                       // 中間オブジェクトのオブジェクト・タイプ
     int Size;                       // 中間オブジェクトのマシンコード・サイズ
@@ -29,21 +37,75 @@ const char *reg8name[8] = {
     "B", "C", "D", "E", "H", "L", "(HL)", "A"
 };
 
+enum codetype {
+    NOLABEL,
+    LABELED,            // ラベルのアドレスの埋め込み
+    LABELDEF,           // ラベルのアドレスのリスティング出力用
+    ORIGIN              // アドレス指定
+};
+
+
+int mystrncasecmp(const char *s1, const char *s2, size_t n);
+void setObj(int type, char *listingString, int size, ...);
+int symbolNum(char *symbol);
+
+int pass2(void);
+
+void debug(const char *format, ...);
+void trace(const char *format, ...);
+
+extern FILE *yyin;
+
+FILE *fpasm;
+FILE *fpbin;
+FILE *fplst;
 
 int main(int argc, char *argv[])
 {
-    int result;
-    //symbols = 0;
+    int result, fnLen;
+    char fnbin[MAXFNLEN + 4 + 1], fnlst[MAXFNLEN + 4 + 1];
+
     symbolsCount = 0;
     objsCount = 0;
     codeBytes = 0;
     relocAddress = 0;
 
+    if ((argc != 2) || (strlen(argv[1]) < 4) || (mystrncasecmp(argv[1] + strlen(argv[1]) - 4, ".Z80", (size_t)4) != 0)) {
+        printf("Usage: %s assembly_source.z80\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    fnLen = strlen(argv[1]) - (size_t)4;
+    if (fnLen > MAXFNLEN) fnLen = MAXFNLEN;
+    strncpy(fnlst, argv[1], fnLen);
+    strncpy(fnlst + fnLen, ".lst", 5);
+    fprintf(stderr, "Listing Filename: %s\n", fnlst);
+    strncpy(fnbin, argv[1], fnLen);
+    strncpy(fnbin + fnLen, ".bin", 5);
+    fprintf(stderr, "Binary Filename: %s\n", fnbin);
+    fpasm = fopen(argv[1], "r");
+    if (!fpasm) {
+        fprintf(stderr, "Can't open source: %s\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
+
+    yyin = fpasm;
     result = yyparse();
     if (result) return result;
 
     /* pass 2 */
+    fplst = fopen(fnlst, "w");
+    if (!fplst) {
+        fprintf(stderr, "Can't open output listing: %s\n", fnlst);
+        exit(EXIT_FAILURE);
+    }
+    fpbin = fopen(fnbin, "wb");
+    if (!fpbin) {
+        fprintf(stderr, "Can't open output binary: %s\n", fnbin);
+        exit(EXIT_FAILURE);
+    }
     result = pass2();
+    fclose(fplst);
+    fclose(fpbin);
 
     return result;
 }
@@ -199,32 +261,50 @@ int pass2(void)
     unsigned int address;       //現時点では ORG 擬似命令は一度しか使用してはいけない仕様
 
     for (i = 0; i < objsCount; i++) {
-        fprintf(stdout, "%04X:", relocAddress + codeCount);
+        fprintf(fplst, "%04X:", relocAddress + codeCount);
         switch (objs[i].Type) {
         case LABELED:           // 0x??, 0xLL, 0xHHタイプ
             if (symbols[objs[i].UsedSymbol].isDefined == ISDEFINED_FALSE) {
                 //yyerror()?
                 printf("Undefined Symbol: \"%s\".\n", symbols[objs[i].UsedSymbol].Name);
+                fprintf(fplst, "Undefined Symbol: \"%s\".\n", symbols[objs[i].UsedSymbol].Name);
             } else {
                 address = symbols[objs[i].UsedSymbol].Value;
-                printf("%02X %02X %02X ", objs[i].code[0], address & 0x00ff, (address >> 8) & 0x00ff);			
-                fprintf(stdout, "          %s;comments\n", objs[i].ListingString);  // ニーモニック出力
+                fprintf(fplst, "%02X %02X %02X ", objs[i].code[0], address & 0x00ff, (address >> 8) & 0x00ff);			
+                fprintf(fplst, "          %s;comments\n", objs[i].ListingString);  // ニーモニック出力
+                fputc(objs[i].code[0], fpbin);
+                fputc(address & 0x00ff, fpbin);
+                fputc((address >> 8) & 0x00ff, fpbin);
             }
             break;
         case LABELDEF:
-            fprintf(stdout, "%s\n", objs[i].ListingString);             // ニーモニック出力
+            fprintf(fplst, "%s\n", objs[i].ListingString);             // ニーモニック出力
             break;
         default:
             for (j = 0; j < objs[i].Size; j++) {
-                fprintf(stdout, "%02X ", objs[i].code[j]);
+                fprintf(fplst, "%02X ", objs[i].code[j]);
+                fputc(objs[i].code[j], fpbin);
             }
-            for (k = 0; k < 24 - 5 - (j * 3); k++) fputc(' ', stdout);
-            fprintf(stdout, "%s;comments\n", objs[i].ListingString);    // ニーモニック出力
+            for (k = 0; k < 24 - 5 - (j * 3); k++) fputc(' ', fplst);
+            fprintf(fplst, "%s;comments\n", objs[i].ListingString);    // ニーモニック出力
             break;
         }
         codeCount += objs[i].Size;
     }
 
+    return 0;
+}
+
+int mystrncasecmp(const char *s1, const char *s2, size_t n)
+{
+    char c1, c2;
+    while (n > 0) {
+        c1 = tolower(*s1);	s1++;
+        c2 = tolower(*s2);	s2++;
+        if (c1 < c2) return -1;
+        if (c1 > c2) return 1;
+        n--;
+    }
     return 0;
 }
 
