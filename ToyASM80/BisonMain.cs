@@ -4,18 +4,31 @@
  * 字句解析を呼び出し、処理が済むと終了する. 
  */
 
-//char **symbols;
+
 char *symbolTable[SYMTABSIZE];          // シンボル文字列へのポインタ
 unsigned int symbolValue[SYMTABSIZE];   // シンボルに割り当てられた具体的なアドレス
 int symbols;                            // 登録済みシンボル数
 
-unsigned char codeArray[CODESIZE];      // 中間オブジェクトのバイト表現の配列
-int codeCount;                          // 出力済みの中間オブジェクトの数
-int codeBytes;                          // 出力済みの中間オブジェクトのバイト数
-int sizeArray[CODESIZE];                // 中間オブジェクトのマシンコード・サイズ
-int typeArray[CODESIZE];                // 中間オブジェクトのオブジェクト・タイプ
-unsigned int usedSymbol[CODESIZE];      // 中間オブジェクトで使用したシンボル
-char *listArray[CODESIZE];              // リスティング出力用の配列
+/*
+struct Symbol {
+    char *SymbolName;               // シンボル文字列へのポインタ
+    unsigned int SymbolValue;       // シンボルに割り当てられた具体的なアドレス
+};
+int symbolsCount;                   // 登録済みシンボル数
+struct Symbol symbols[SYMTABSIZE];
+*/
+
+struct CodeObj {
+    int Type;                       // 中間オブジェクトのオブジェクト・タイプ
+    int Size;                       // 中間オブジェクトのマシンコード・サイズ
+    int UsedSymbol;                 // 中間オブジェクトで使用したシンボルの番号
+    unsigned char code[4];          // マシンコード
+    char *ListingString;            // リスティング出力用の文字列
+};
+int objsCount;                      // 出力済みの中間オブジェクトの数
+struct CodeObj objs[CODESIZE];
+
+int codeBytes;                      // 出力済みの中間オブジェクトのバイト数
 unsigned int relocAddress;
 
 const char *reg8name[8] = {
@@ -33,12 +46,12 @@ enum reg8enum {
     reg8_a
 };
 
-int main(void)
+int main(int argc, char *argv[])
 {
     int result;
+    //symbolsCount = 0;
     symbols = 0;
-    /* symbols = malloc(SYMTABSIZE); */
-    codeCount = 0;
+    objsCount = 0;
     codeBytes = 0;
     relocAddress = 0;
 
@@ -58,18 +71,29 @@ int main(void)
        fprintf (stderr, "%s\n", s);
      }
 
-void putobj(int code)
+void setObj(int type, char *listingString, int size, ...)
 {
-    //debug("object code: {%02x}\n", code);
-    codeArray[codeBytes++] = (unsigned char)code;
-}
+    //Type, ListingString, Size, マシンコードをセットする
+    va_list argp;
+    unsigned char code;
+    int i;
 
-void puttype(int codeSize, int type)
-{
-    debug("object type: {%02x}\n", type);   // codeBytes更新までにすべての仕事を終えてくださいね
-    sizeArray[codeCount] = codeSize;		// codeCount 番目の中間オブジェクトのサイズ
-    typeArray[codeCount] = type;			// 出力する中間オブジェクトのタイプ
-    codeCount++;							// 出力済みの中間オブジェクトの数のカウントアップ
+    va_start(argp, size);
+    for (i = 0; i < size; i++) {
+        code = va_arg(argp, unsigned char);
+        debug("object code: {%02x}\n", code);
+        objs[objsCount].code[i] = code;
+        codeBytes++;
+    }
+    objs[objsCount].Size = size;
+    va_end(argp);
+
+    debug("object type: {%02x}\n", type);
+    objs[objsCount].Type = type;
+
+    objs[objsCount].ListingString = listingString;
+
+    objsCount++;        // objsCount 更新までにすべての仕事を終えてくださいね
 }
 
 void increg8(int reg8)
@@ -78,10 +102,8 @@ void increg8(int reg8)
     debug("reg8: %d\n", reg8);
     p = malloc((size_t)25);
     snprintf(p, 24, "INC     %s               ", reg8name[reg8]);
-    listArray[codeCount] = p;
-    
-    puttype(1, NOLABEL);
-    putobj(0x04 | (reg8 << 3));
+
+    setObj(NOLABEL, p, 1, 0x04 | (reg8 << 3));
 }
 
 void out(int port)
@@ -90,11 +112,8 @@ void out(int port)
     debug("out port: %d\n", port);
     p = malloc((size_t)25);
     snprintf(p, 24, "OUT     0x%02X            ", port);
-    listArray[codeCount] = p;
-    
-    puttype(2, NOLABEL);
-    putobj(0xd3);
-    putobj(port & 0x00ff);
+
+    setObj(NOLABEL, p, 2, 0xd3, port & 0x00ff);
 }
 
 void ldr8r8(int dest, int src)
@@ -103,9 +122,8 @@ void ldr8r8(int dest, int src)
     debug("ld: (reg %d) <- (reg %d)\n", dest, src);
     p = malloc((size_t)25);
     snprintf(p, 24, "LD      %s, %s            ", reg8name[dest], reg8name[src]);
-    listArray[codeCount] = p;
-    puttype(1, NOLABEL);
-    putobj(0x40 | (dest << 3) | src);
+
+    setObj(NOLABEL, p, 1, 0x40 | (dest << 3) | src);
 }
 
 void ldregim8(int dest, int immediate)
@@ -114,41 +132,31 @@ void ldregim8(int dest, int immediate)
     debug("ld: (reg %d) <- (immediate %d)\n", dest, immediate);
     p = malloc((size_t)25);
     snprintf(p, 24, "LD      %s, 0x%02X         ", reg8name[dest], immediate);
-    listArray[codeCount] = p;
-    puttype(2, NOLABEL);
-    putobj(0x06 | (dest << 3));
-    putobj(immediate);
+
+    setObj(NOLABEL, p, 2, 0x06 | (dest << 3), immediate);
 }
 
 void jp(int absoluteAddress)
 {
+    //絶対アドレスジャンプ
     char *p;
-
-    //絶対アドレスジャンプなんだからこの下の1行はいらない
-    //absoluteAddress += relocAddress;        // ORG 擬似命令対応
 
     p = malloc((size_t)25);
     snprintf(p, 24, "JP      0x%04X            ", absoluteAddress);
-    listArray[codeCount] = p;
-    puttype(3, NOLABEL);
-    putobj(0xc3);
-    putobj((absoluteAddress) & 0x00ff);
-    putobj(((absoluteAddress) >> 8) & 0x00ff);
     trace("jp: nn = (%04x)\n", absoluteAddress);
+
+    setObj(NOLABEL, p, 3, 0xc3, (absoluteAddress) & 0x00ff, ((absoluteAddress) >> 8) & 0x00ff);
 }
 
 void jplabel(void)
 {
     char *p;
-    usedSymbol[codeCount] = symbolNum(yytext);
+    objs[objsCount].UsedSymbol = symbolNum(yytext);
 
     p = malloc((size_t)25);
     snprintf(p, 24, "JP      %s               ", yytext);
-    listArray[codeCount] = p;
-    puttype(3, LABELED);
-    putobj(0xc3);
-    putobj(0x00);
-    putobj(0x00);
+
+    setObj(LABELED, p, 3, 0xc3, 0x00, 0x00);
 }
 
 void org(int address)
@@ -157,9 +165,9 @@ void org(int address)
 
     p = malloc((size_t)25);
     snprintf(p, 24, "ORG     0x%04X           ", address);
-    listArray[codeCount] = p;
+
     relocAddress = address;
-    puttype(0, ORIGIN);    
+    setObj(ORIGIN, p, 0);
 }
 
 void deflabel(void)
@@ -174,8 +182,8 @@ void deflabel(void)
 
     p = malloc((size_t)25);
     snprintf(p, 24, "%s                       ", yytext);
-    listArray[codeCount] = p;
-    puttype(0, LABELDEF);
+
+    setObj(LABELDEF, p, 0);
 }
 
 int symbolNum(char *symbol)
@@ -214,45 +222,33 @@ int symbolNum(char *symbol)
 int pass2(void)
 {
     // 最終コード生成部
-    int i, j, k;
-    unsigned int address;
-    unsigned char *p;
-    int *t;                 // 中間オブジェクトのタイプをトラバースするポインタ
+    int i, j, k, codeCount = 0;
+    unsigned int address;       //現時点では ORG 擬似命令は一度しか使用してはいけない仕様
 
-    char lcode[25];         // リスティング左列
-    char lmnemo[25];        // リスティング中央列
-
-    p = codeArray;
-    t = typeArray;
-    for (i = 0; i < codeCount; i++) {
-        //fprintf(stdout, "%04X:", (p - codeArray));
-        fprintf(stdout, "%04X:", (relocAddress + (p - codeArray)));
-        switch (*(t++)) {
+    for (i = 0; i < objsCount; i++) {
+        fprintf(stdout, "%04X:", relocAddress + codeCount);
+        switch (objs[i].Type) {
         case LABELED:           // 0x??, 0xLL, 0xHHタイプ
-            address = symbolValue[usedSymbol[i]];
-            //printf("Reference: (%d)%p: %04X, ", usedSymbol[i], symbolTable[usedSymbol[i]], address);
+            address = symbolValue[objs[i].UsedSymbol];
             if (address == UNDEFINED_SYMBOL) {
                 //yyerror()?
-                printf("Undefined Symbol: \"%s\".\n", symbolTable[usedSymbol[i]]);
+                printf("Undefined Symbol: \"%s\".\n", symbolTable[objs[i].UsedSymbol]);
             }
-            printf("%02X %02X %02X ", p[0], address & 0x00ff, (address >> 8) & 0x00ff);			
-            p += sizeArray[i];
-            fprintf(stdout, "          %s;comments\n", listArray[i]);
+            printf("%02X %02X %02X ", objs[i].code[0], address & 0x00ff, (address >> 8) & 0x00ff);			
+            fprintf(stdout, "          %s;comments\n", objs[i].ListingString);  // ニーモニック出力
             break;
         case LABELDEF:
-            fprintf(stdout, "%s\n", listArray[i]);
+            fprintf(stdout, "%s\n", objs[i].ListingString);             // ニーモニック出力
             break;
         default:
-            for (j = 0; j < sizeArray[i]; j++) {
-                fprintf(stdout, "%02X ", (int)*p);
-                p++;
+            for (j = 0; j < objs[i].Size; j++) {
+                fprintf(stdout, "%02X ", objs[i].code[j]);
             }
             for (k = 0; k < 24 - 5 - (j * 3); k++) fputc(' ', stdout);
-            // ニーモニック出力
-            //fprintf(stdout, "mnemo   r, 0x____       ;comments\n");
-            fprintf(stdout, "%s;comments\n", listArray[i]);
+            fprintf(stdout, "%s;comments\n", objs[i].ListingString);    // ニーモニック出力
             break;
         }
+        codeCount += objs[i].Size;
     }
 
     return 0;
