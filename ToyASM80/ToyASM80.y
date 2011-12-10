@@ -14,7 +14,7 @@
 
     #define SYMTABSIZE          (4096)
     #define CODESIZE            (4096 * 4)
-    #define UNDEFINED_SYMBOL    (0xffffffff)
+    #define ISDEFINED_FALSE     (0)
     extern char *yytext;        // これ必要。重要。
 
     int yylex(void);

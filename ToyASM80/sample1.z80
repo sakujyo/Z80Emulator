@@ -1,4 +1,4 @@
-    ORG 0x2000          ;ORG    0x1000
+    ;ORG 0x2000          ;ORG    0x1000
 START:
     LD      A, 0x00     ;//XOR   A‚ÍƒAƒZƒ“ƒuƒ‰‚ª–¢ŽÀ‘•
     OUT     0x04

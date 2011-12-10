@@ -4,20 +4,6 @@
  * 字句解析を呼び出し、処理が済むと終了する. 
  */
 
-
-char *symbolTable[SYMTABSIZE];          // シンボル文字列へのポインタ
-unsigned int symbolValue[SYMTABSIZE];   // シンボルに割り当てられた具体的なアドレス
-int symbols;                            // 登録済みシンボル数
-
-/*
-struct Symbol {
-    char *SymbolName;               // シンボル文字列へのポインタ
-    unsigned int SymbolValue;       // シンボルに割り当てられた具体的なアドレス
-};
-int symbolsCount;                   // 登録済みシンボル数
-struct Symbol symbols[SYMTABSIZE];
-*/
-
 struct CodeObj {
     int Type;                       // 中間オブジェクトのオブジェクト・タイプ
     int Size;                       // 中間オブジェクトのマシンコード・サイズ
@@ -28,6 +14,14 @@ struct CodeObj {
 int objsCount;                      // 出力済みの中間オブジェクトの数
 struct CodeObj objs[CODESIZE];
 
+struct Symbol {
+    char *Name;                     // シンボル文字列へのポインタ
+    unsigned int Value;             // シンボルに割り当てられた具体的なアドレス
+    int isDefined;                  // 0 以外なら割り当てられている
+};
+int symbolsCount;                   // 登録済みシンボル数
+struct Symbol symbols[SYMTABSIZE];
+
 int codeBytes;                      // 出力済みの中間オブジェクトのバイト数
 unsigned int relocAddress;
 
@@ -35,41 +29,30 @@ const char *reg8name[8] = {
     "B", "C", "D", "E", "H", "L", "(HL)", "A"
 };
 
-enum reg8enum {
-    reg8_b = 0,
-    reg8_c = 1,
-    reg8_d = 2,
-    reg8_e = 3,
-    reg8_h = 4,
-    reg8_l = 5,
-    reg8_hl = 6,
-    reg8_a
-};
 
 int main(int argc, char *argv[])
 {
     int result;
-    //symbolsCount = 0;
-    symbols = 0;
+    //symbols = 0;
+    symbolsCount = 0;
     objsCount = 0;
     codeBytes = 0;
     relocAddress = 0;
 
     result = yyparse();
+    if (result) return result;
 
     /* pass 2 */
-    if (result) return result;
     result = pass2();
 
     return result;
 }
 
 /* Called by yyparse on error.  */
-     void
-     yyerror (char const *s)
-     {
-       fprintf (stderr, "%s\n", s);
-     }
+void yyerror (char const *s)
+{
+    fprintf (stderr, "%s\n", s);
+}
 
 void setObj(int type, char *listingString, int size, ...)
 {
@@ -98,40 +81,36 @@ void setObj(int type, char *listingString, int size, ...)
 
 void increg8(int reg8)
 {
-    char *p;
-    debug("reg8: %d\n", reg8);
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "INC     %s               ", reg8name[reg8]);
+    debug("reg8: %d\n", reg8);
 
     setObj(NOLABEL, p, 1, 0x04 | (reg8 << 3));
 }
 
 void out(int port)
 {
-    char *p;
-    debug("out port: %d\n", port);
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "OUT     0x%02X            ", port);
+    debug("out port: %d\n", port);
 
     setObj(NOLABEL, p, 2, 0xd3, port & 0x00ff);
 }
 
 void ldr8r8(int dest, int src)
 {
-    char *p;
-    debug("ld: (reg %d) <- (reg %d)\n", dest, src);
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "LD      %s, %s            ", reg8name[dest], reg8name[src]);
+    debug("ld: (reg %d) <- (reg %d)\n", dest, src);
 
     setObj(NOLABEL, p, 1, 0x40 | (dest << 3) | src);
 }
 
 void ldregim8(int dest, int immediate)
 {
-    char *p;
-    debug("ld: (reg %d) <- (immediate %d)\n", dest, immediate);
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "LD      %s, 0x%02X         ", reg8name[dest], immediate);
+    debug("ld: (reg %d) <- (immediate %d)\n", dest, immediate);
 
     setObj(NOLABEL, p, 2, 0x06 | (dest << 3), immediate);
 }
@@ -139,9 +118,7 @@ void ldregim8(int dest, int immediate)
 void jp(int absoluteAddress)
 {
     //絶対アドレスジャンプ
-    char *p;
-
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "JP      0x%04X            ", absoluteAddress);
     trace("jp: nn = (%04x)\n", absoluteAddress);
 
@@ -150,39 +127,35 @@ void jp(int absoluteAddress)
 
 void jplabel(void)
 {
-    char *p;
-    objs[objsCount].UsedSymbol = symbolNum(yytext);
-
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "JP      %s               ", yytext);
+
+    objs[objsCount].UsedSymbol = symbolNum(yytext);
 
     setObj(LABELED, p, 3, 0xc3, 0x00, 0x00);
 }
 
 void org(int address)
 {
-    char *p;
-
-    p = malloc((size_t)25);
+    char *p = malloc((size_t)25);
     snprintf(p, 24, "ORG     0x%04X           ", address);
 
     relocAddress = address;
+
     setObj(ORIGIN, p, 0);
 }
 
 void deflabel(void)
 {
     int symNum;
-    char *p;
+    char *p = malloc((size_t)25);
+    snprintf(p, 24, "%s                       ", yytext);
 
     trace("Bison LABEL definition: (%p)%s\n", yytext, yytext);
     symNum = symbolNum(yytext);
     trace("symnum = %d, address = %d\n", symNum, relocAddress + codeBytes);
-    symbolValue[symNum] = relocAddress + codeBytes;    // ORG 対応
-
-    p = malloc((size_t)25);
-    snprintf(p, 24, "%s                       ", yytext);
-
+    symbols[symNum].Value = relocAddress + codeBytes;   // ORG 対応済み
+    symbols[symNum].isDefined = 1;                      // ISDEFINED_FALSE 以外なら TRUE
     setObj(LABELDEF, p, 0);
 }
 
@@ -196,12 +169,12 @@ int symbolNum(char *symbol)
     if (symbol[sl - 1] == ':') sl--;    // ラベル定義の場合は、":"の1バイトを引く
 
     trace("finding symbol (%s)...\n", symbol);
-    for (i = 0; i < symbols; i++) {
+    for (i = 0; i < symbolsCount; i++) {
         // 登録済みのシンボルがないか検索する
-        trace("comparing with (%s)\n", symbolTable[i]);
-        if (strncmp(symbol, symbolTable[i], sl) == 0) {
+        trace("comparing with (%s)\n", symbols[i].Name);
+        if (strncmp(symbol, symbols[i].Name, sl) == 0) {
             // 一致した
-            if (sl == strlen(symbolTable[i])) return i;	    // 見つかったらそのシンボル番号を返す	
+            if (sl == strlen(symbols[i].Name)) return i;	// 見つかったらそのシンボル番号を返す	
         }
     }
 
@@ -211,8 +184,8 @@ int symbolNum(char *symbol)
     strncpy(p, symbol, sl);	// 領域の末尾にはstrncpy()によりNULL文字が補われる
     *(p + sl) = '\0';
 
-    symbolValue[symbols] = UNDEFINED_SYMBOL;
-    symbolTable[symbols++] = p;
+    symbols[symbolsCount].isDefined = ISDEFINED_FALSE;
+    symbols[symbolsCount++].Name = p;
     //symbolTable[symbols++] = yytext;  // これはやっちゃダメなパターンのやつ
     trace("symbol (%s) added.\n", p);
 	
@@ -229,13 +202,14 @@ int pass2(void)
         fprintf(stdout, "%04X:", relocAddress + codeCount);
         switch (objs[i].Type) {
         case LABELED:           // 0x??, 0xLL, 0xHHタイプ
-            address = symbolValue[objs[i].UsedSymbol];
-            if (address == UNDEFINED_SYMBOL) {
+            if (symbols[objs[i].UsedSymbol].isDefined == ISDEFINED_FALSE) {
                 //yyerror()?
-                printf("Undefined Symbol: \"%s\".\n", symbolTable[objs[i].UsedSymbol]);
+                printf("Undefined Symbol: \"%s\".\n", symbols[objs[i].UsedSymbol].Name);
+            } else {
+                address = symbols[objs[i].UsedSymbol].Value;
+                printf("%02X %02X %02X ", objs[i].code[0], address & 0x00ff, (address >> 8) & 0x00ff);			
+                fprintf(stdout, "          %s;comments\n", objs[i].ListingString);  // ニーモニック出力
             }
-            printf("%02X %02X %02X ", objs[i].code[0], address & 0x00ff, (address >> 8) & 0x00ff);			
-            fprintf(stdout, "          %s;comments\n", objs[i].ListingString);  // ニーモニック出力
             break;
         case LABELDEF:
             fprintf(stdout, "%s\n", objs[i].ListingString);             // ニーモニック出力
