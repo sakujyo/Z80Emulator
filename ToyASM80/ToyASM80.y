@@ -30,7 +30,11 @@
     void ldr8r8(int dest, int src);
     void jp(int absoluteAddress);
     void jplabel(void);
+    void out(int port);
+    void ldregim8(int dest, int immediate);
+    //void ldaim8(int reg8, int immediate);
     void deflabel(void);
+    void org(int address);
     int symbolNum(char *symbol);
 
     int pass2(void);
@@ -41,7 +45,8 @@
     enum codetype {
         nolabel,
         labeled,            // ラベルのアドレスの埋め込み
-        labeldef            // ラベルのアドレスのリスティング出力用
+        labeldef,           // ラベルのアドレスのリスティング出力用
+        ORIGIN              // アドレス指定
     };
 
 %}
@@ -61,6 +66,7 @@
 %token INC
 %token LD
 %token JP
+%token OUT
 
 %token INTEGER
 %token HEXINT
@@ -79,12 +85,14 @@ program:    /* EMPTY */
 
     /*line: */
 
-statement:  LABELDEFINITION     { deflabel() }
-            | INC reg8          { increg8($2) }     /* $x: yylval */
-            | LD reg8 ',' reg8  { ldr8r8($2, $4) }
-            | JP number         { jp($2) }
-            | JP LABEL          { jplabel() }
-            | ORG number        { org($2) }
+statement:  LABELDEFINITION         { deflabel() }
+            | INC reg8              { increg8($2) }     /* $x: yylval */
+            | LD reg8 ',' reg8      { ldr8r8($2, $4) }
+            | JP number             { jp($2) }
+            | JP LABEL              { jplabel() }
+            | ORG number            { org($2) }
+            | OUT number            { out($2) }
+            | LD reg8 ',' number    { ldregim8($2, $4) }
     ;
 
 reg8:       REGB | REGC | REGD | REGE | REGH | REGL | REGA

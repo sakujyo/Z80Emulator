@@ -28,7 +28,8 @@ comment             ;.*$
 
 DIGIT               [0-9]
 INTEGER             {DIGIT}+
-HEXINT              0x{DIGIT}+
+HEXDIGIT            [a-f]
+HEXINT              0x({DIGIT}|{HEXDIGIT})+
 
 LABEL               [a-zA-Z][0-9a-zA-Z]+
                     /* ç°ÇÃÇ∆Ç±ÇÎí∑Ç≥êßå¿Ç»Çµ */
@@ -110,6 +111,11 @@ LABELDEFINITION     {LABEL}:
             return JP;
         }
 
+"OUT"    {
+            debug("Saw an mnemonic OUT \n");
+            return OUT;
+        }
+
 "ORG"   {
             debug("Saw an pseudo-instruction ORG \n");
             return ORG;
@@ -151,7 +157,8 @@ LABELDEFINITION     {LABEL}:
             }
 
 {comment}   {
-                /* No action and no return */
+                debug("Saw an comment: %s\n", yytext);
+                /* No return */
             }
 
 \n          {

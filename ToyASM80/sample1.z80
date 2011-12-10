@@ -1,5 +1,21 @@
-    ORG 0x5678
+    ORG 0x2000          ;ORG    0x1000
 START:
+    LD      A, 0x00     ;//XOR   A‚ÍƒAƒZƒ“ƒuƒ‰‚ª–¢ŽÀ‘•
+    OUT     0x04
+    OUT     0x05
+    OUT     0x06
+    OUT     0x07
+    OUT     0x02
+    INC     A
+    OUT     0x03
+    LD      A, 0xff
+    OUT     0x01
+    LD      A, 0x80
+    OUT     0x04
+    LD      A, 0x03
+    OUT     0x00
+
+BLAB:
 	LD	B, B	;comment sample
 	LD	B, C
 	LD	B, D
@@ -32,6 +48,7 @@ LOOP1:
 	INC L
 	INC (HL)
 	INC A
+    OUT 0x03
 	JP	LOOP1
 	JP	END
 	JP	0x1234

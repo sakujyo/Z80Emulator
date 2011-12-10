@@ -40,6 +40,8 @@ int main(void)
     /* symbols = malloc(SYMTABSIZE); */
     codeCount = 0;
     codeBytes = 0;
+    relocAddress = 0;
+
     result = yyparse();
 
     /* pass 2 */
@@ -75,11 +77,24 @@ void increg8(int reg8)
     char *p;
     debug("reg8: %d\n", reg8);
     p = malloc((size_t)25);
-    snprintf(p, 24, "INC      %s              ", reg8name[reg8]);
+    snprintf(p, 24, "INC     %s               ", reg8name[reg8]);
     listArray[codeCount] = p;
     
     puttype(1, nolabel);
     putobj(0x04 | (reg8 << 3));
+}
+
+void out(int port)
+{
+    char *p;
+    debug("out port: %d\n", port);
+    p = malloc((size_t)25);
+    snprintf(p, 24, "OUT     0x%02X            ", port);
+    listArray[codeCount] = p;
+    
+    puttype(2, nolabel);
+    putobj(0xd3);
+    putobj(port & 0x00ff);
 }
 
 void ldr8r8(int dest, int src)
@@ -93,9 +108,25 @@ void ldr8r8(int dest, int src)
     putobj(0x40 | (dest << 3) | src);
 }
 
+void ldregim8(int dest, int immediate)
+{
+    char *p;
+    debug("ld: (reg %d) <- (immediate %d)\n", dest, immediate);
+    p = malloc((size_t)25);
+    snprintf(p, 24, "LD      %s, 0x%02X         ", reg8name[dest], immediate);
+    listArray[codeCount] = p;
+    puttype(2, nolabel);
+    putobj(0x06 | (dest << 3));
+    putobj(immediate);
+}
+
 void jp(int absoluteAddress)
 {
     char *p;
+
+    //絶対アドレスジャンプなんだからこの下の1行はいらない
+    //absoluteAddress += relocAddress;        // ORG 擬似命令対応
+
     p = malloc((size_t)25);
     snprintf(p, 24, "JP      0x%04X            ", absoluteAddress);
     listArray[codeCount] = p;
@@ -120,6 +151,17 @@ void jplabel(void)
     putobj(0x00);
 }
 
+void org(int address)
+{
+    char *p;
+
+    p = malloc((size_t)25);
+    snprintf(p, 24, "ORG     0x%04X           ", address);
+    listArray[codeCount] = p;
+    relocAddress = address;
+    puttype(0, ORIGIN);    
+}
+
 void deflabel(void)
 {
     int symNum;
@@ -128,7 +170,8 @@ void deflabel(void)
     trace("Bison LABEL definition: (%p)%s\n", yytext, yytext);
     symNum = symbolNum(yytext);
     trace("symnum = %d, codeBytes = %d\n", symNum, codeBytes);
-    symbolValue[symNum] = codeBytes;    // TODO: ORG 実装とこの行への対応
+    //symbolValue[symNum] = codeBytes;    // TODO: ORG 実装とこの行への対応
+    symbolValue[symNum] = relocAddress + codeBytes;    // TODO: ORG 実装とこの行への対応
     //symbolTable[symbols++] = yytext;  // これはやっちゃダメなパターンのやつ
 
     p = malloc((size_t)25);
@@ -183,7 +226,8 @@ int pass2(void)
     p = codeArray;
     t = typeArray;
     for (i = 0; i < codeCount; i++) {
-        fprintf(stdout, "%04X:", (p - codeArray));
+        //fprintf(stdout, "%04X:", (p - codeArray));
+        fprintf(stdout, "%04X:", (relocAddress + (p - codeArray)));
         switch (*(t++)) {
         case labeled:           // 0x??, 0xLL, 0xHHタイプ
             address = symbolValue[usedSymbol[i]];

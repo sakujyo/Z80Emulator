@@ -50,12 +50,13 @@
      INC = 266,
      LD = 267,
      JP = 268,
-     INTEGER = 269,
-     HEXINT = 270,
-     LABEL = 271,
-     LABELDEFINITION = 272,
-     ORG = 273,
-     NEWLINE = 274
+     OUT = 269,
+     INTEGER = 270,
+     HEXINT = 271,
+     LABEL = 272,
+     LABELDEFINITION = 273,
+     ORG = 274,
+     NEWLINE = 275
    };
 #endif
 

@@ -52,6 +52,7 @@
     <Compile Include="AsmForm.Designer.cs">
       <DependentUpon>AsmForm.cs</DependentUpon>
     </Compile>
+    <None Include="BisonMain.c" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="AsmForm.resx">
