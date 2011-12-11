@@ -245,7 +245,7 @@ int symbolNum(char *symbol)
     // 見つからなかった場合は新たにシンボル表に追加する
     // シンボル出現時の番号確認用と、シンボルの再定義(エラー)検出用
     p = malloc(sl + 1);		// NULL文字分の1バイトを足す
-    strncpy(p, symbol, sl);	// 領域の末尾にはstrncpy()によりNULL文字が補われる
+    strncpy(p, symbol, sl);
     *(p + sl) = '\0';
 
     symbols[symbolsCount].isDefined = ISDEFINED_FALSE;
