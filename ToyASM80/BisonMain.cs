@@ -18,6 +18,7 @@ struct CodeObj {
     int UsedSymbol;                 // 中間オブジェクトで使用したシンボルの番号
     unsigned char code[4];          // マシンコード
     char *ListingString;            // リスティング出力用の文字列
+    char *CommentString;            // コメントリスティング用の文字列
 };
 int objsCount;                      // 出力済みの中間オブジェクトの数
 struct CodeObj objs[CODESIZE];
@@ -41,13 +42,15 @@ enum codetype {
     NOLABEL,
     LABELED,            // ラベルのアドレスの埋め込み
     LABELDEF,           // ラベルのアドレスのリスティング出力用
-    ORIGIN              // アドレス指定
+    ORIGIN,             // アドレス指定
+    PCOMMENT            // コメント
 };
 
 
 int mystrncasecmp(const char *s1, const char *s2, size_t n);
 void setObj(int type, char *listingString, int size, ...);
 int symbolNum(char *symbol);
+char *genlst(const char *mnemonic, const char *format, ...);
 
 int pass2(void);
 
@@ -143,8 +146,7 @@ void setObj(int type, char *listingString, int size, ...)
 
 void increg8(int reg8)
 {
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "INC     %s               ", reg8name[reg8]);
+    char *p = genlst("INC", "%s", reg8name[reg8]);
     debug("reg8: %d\n", reg8);
 
     setObj(NOLABEL, p, 1, 0x04 | (reg8 << 3));
@@ -152,8 +154,7 @@ void increg8(int reg8)
 
 void out(int port)
 {
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "OUT     0x%02X            ", port);
+    char *p = genlst("OUT", "0x%02X", port);
     debug("out port: %d\n", port);
 
     setObj(NOLABEL, p, 2, 0xd3, port & 0x00ff);
@@ -161,8 +162,7 @@ void out(int port)
 
 void ldr8r8(int dest, int src)
 {
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "LD      %s, %s            ", reg8name[dest], reg8name[src]);
+    char *p = genlst("LD", "%s, %s", reg8name[dest], reg8name[src]);
     debug("ld: (reg %d) <- (reg %d)\n", dest, src);
 
     setObj(NOLABEL, p, 1, 0x40 | (dest << 3) | src);
@@ -170,8 +170,7 @@ void ldr8r8(int dest, int src)
 
 void ldregim8(int dest, int immediate)
 {
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "LD      %s, 0x%02X         ", reg8name[dest], immediate);
+    char *p = genlst("LD", "%s, 0x%02X", reg8name[dest], immediate);
     debug("ld: (reg %d) <- (immediate %d)\n", dest, immediate);
 
     setObj(NOLABEL, p, 2, 0x06 | (dest << 3), immediate);
@@ -180,8 +179,7 @@ void ldregim8(int dest, int immediate)
 void jp(int absoluteAddress)
 {
     //絶対アドレスジャンプ
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "JP      0x%04X            ", absoluteAddress);
+    char *p = genlst("JP", "0x%04X", absoluteAddress);
     trace("jp: nn = (%04x)\n", absoluteAddress);
 
     setObj(NOLABEL, p, 3, 0xc3, (absoluteAddress) & 0x00ff, ((absoluteAddress) >> 8) & 0x00ff);
@@ -189,8 +187,7 @@ void jp(int absoluteAddress)
 
 void jplabel(void)
 {
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "JP      %s               ", yytext);
+    char *p = genlst("JP", "%s", yytext);
 
     objs[objsCount].UsedSymbol = symbolNum(yytext);
 
@@ -199,8 +196,7 @@ void jplabel(void)
 
 void org(int address)
 {
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "ORG     0x%04X           ", address);
+    char *p = genlst("ORG", "0x%04X", address);
 
     relocAddress = address;
 
@@ -210,8 +206,7 @@ void org(int address)
 void deflabel(void)
 {
     int symNum;
-    char *p = malloc((size_t)25);
-    snprintf(p, 24, "%s                       ", yytext);
+    char *p = genlst("", "    %s", yytext);
 
     trace("Bison LABEL definition: (%p)%s\n", yytext, yytext);
     symNum = symbolNum(yytext);
@@ -219,6 +214,13 @@ void deflabel(void)
     symbols[symNum].Value = relocAddress + codeBytes;   // ORG 対応済み
     symbols[symNum].isDefined = 1;                      // ISDEFINED_FALSE 以外なら TRUE
     setObj(LABELDEF, p, 0);
+}
+
+void comment(void)
+{
+    char *p = malloc(strlen(yytext) + (size_t)1);
+    strcpy(p, yytext);
+    setObj(PCOMMENT, p, 0);
 }
 
 int symbolNum(char *symbol)
@@ -266,19 +268,19 @@ int pass2(void)
         case LABELED:           // 0x??, 0xLL, 0xHHタイプ
             if (symbols[objs[i].UsedSymbol].isDefined == ISDEFINED_FALSE) {
                 //yyerror()?
-                printf("Undefined Symbol: \"%s\".\n", symbols[objs[i].UsedSymbol].Name);
+                fprintf(stderr, "Undefined Symbol: \"%s\".\n", symbols[objs[i].UsedSymbol].Name);
                 fprintf(fplst, "Undefined Symbol: \"%s\".\n", symbols[objs[i].UsedSymbol].Name);
             } else {
                 address = symbols[objs[i].UsedSymbol].Value;
                 fprintf(fplst, "%02X %02X %02X ", objs[i].code[0], address & 0x00ff, (address >> 8) & 0x00ff);			
-                fprintf(fplst, "          %s;comments\n", objs[i].ListingString);  // ニーモニック出力
+                fprintf(fplst, "          %s", objs[i].ListingString);  // ニーモニック出力
                 fputc(objs[i].code[0], fpbin);
                 fputc(address & 0x00ff, fpbin);
                 fputc((address >> 8) & 0x00ff, fpbin);
             }
             break;
         case LABELDEF:
-            fprintf(fplst, "%s\n", objs[i].ListingString);             // ニーモニック出力
+            fprintf(fplst, "%s", objs[i].ListingString);             // ニーモニック出力
             break;
         default:
             for (j = 0; j < objs[i].Size; j++) {
@@ -286,10 +288,17 @@ int pass2(void)
                 fputc(objs[i].code[j], fpbin);
             }
             for (k = 0; k < 24 - 5 - (j * 3); k++) fputc(' ', fplst);
-            fprintf(fplst, "%s;comments\n", objs[i].ListingString);    // ニーモニック出力
+            fprintf(fplst, "%s", objs[i].ListingString);    // ニーモニック出力
             break;
         }
         codeCount += objs[i].Size;
+        if (i + 1 < objsCount) {
+            if (objs[i + 1].Type == PCOMMENT) {
+                fprintf(fplst, "%s", objs[i + 1].ListingString);    // コメント出力
+                i++;
+            }
+        }
+        fputs("\n", fplst);
     }
 
     return 0;
@@ -306,6 +315,25 @@ int mystrncasecmp(const char *s1, const char *s2, size_t n)
         n--;
     }
     return 0;
+}
+
+char *genlst(const char *mnemonic, const char *format, ...)
+{
+    va_list argp;
+    int len;
+    char *p;
+
+    p = (char *)malloc((size_t)25);
+    snprintf(p, (size_t)8, "%s        ", mnemonic);
+    va_start(argp, format);
+    len = vsnprintf(p + 8, (size_t)(24 - 8), format, argp);
+    va_end(argp);
+    while (len < (24 - 8)) {
+        p[8 + len++] = ' ';
+    }
+    p[24] = '\0';
+
+    return p;
 }
 
 void trace(const char *format, ...)

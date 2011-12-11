@@ -1,6 +1,6 @@
     ORG 0x2000          ;ORG    0x1000
-START:
-    LD      A, 0x00     ;//XOR   Aはアセンブラが未実装
+    ; comment only
+START: LD      A, 0x00     ;//XOR   Aはアセンブラが未実装
     OUT     0x04
     OUT     0x05
     OUT     0x06
@@ -15,7 +15,7 @@ START:
     LD      A, 0x03
     OUT     0x00
 
-BLAB:
+BLAB:   ; コメントのサンプル
 	LD	B, B	;comment sample
 	LD	B, C
 	LD	B, D

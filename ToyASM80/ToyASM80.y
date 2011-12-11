@@ -26,6 +26,7 @@
     void ldregim8(int dest, int immediate);
     void deflabel(void);
     void org(int address);
+    void comment(void);
 
 
 %}
@@ -55,14 +56,13 @@
 %token ORG
 
 %token NEWLINE
+%token COMMENT
 
 %% /* Grammar rules and actions follow.  */
 
 program:    /* EMPTY */
             | program statement
     ;
-
-    /*line: */
 
 statement:  LABELDEFINITION         { deflabel() }
             | ORG number            { org($2) }
@@ -72,6 +72,7 @@ statement:  LABELDEFINITION         { deflabel() }
             | JP LABEL              { jplabel() }
             | OUT number            { out($2) }
             | LD reg8 ',' number    { ldregim8($2, $4) }
+            | COMMENT               { comment() }
     ;
 
 reg8:       REGB | REGC | REGD | REGE | REGH | REGL

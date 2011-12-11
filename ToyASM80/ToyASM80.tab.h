@@ -56,7 +56,8 @@
      LABEL = 272,
      LABELDEFINITION = 273,
      ORG = 274,
-     NEWLINE = 275
+     NEWLINE = 275,
+     COMMENT = 276
    };
 #endif
 

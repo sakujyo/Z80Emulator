@@ -158,6 +158,7 @@ LABELDEFINITION     {LABEL}:
 
 {comment}   {
                 debug("Saw an comment: %s\n", yytext);
+                return COMMENT;
                 /* No return */
             }
 
